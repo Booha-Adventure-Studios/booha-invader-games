@@ -20,9 +20,7 @@
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-
-body{
+html,body{
   font-family:'Orbitron',system-ui,-apple-system,sans-serif;
   color:var(--ink);
 
@@ -31,13 +29,15 @@ body{
   -webkit-overflow-scrolling:touch;
   overscroll-behavior-y:contain;
 
-  /* darker + less "cheesy" */
+  /* ensure darkness reaches absolute bottom */
+  min-height:100vh;
   background:
     radial-gradient(circle at 18% 22%, rgba(60,180,120,.14), transparent 62%),
     radial-gradient(circle at 82% 20%, rgba(35,120,85,.12), transparent 66%),
     radial-gradient(circle at 72% 82%, rgba(40,140,95,.10), transparent 70%),
     radial-gradient(circle at 24% 78%, rgba(25,80,55,.16), transparent 70%),
-    linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 100%);
+    linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 70%, #000 100%);
+}
 }
 
 /* slow forest haze */
@@ -70,7 +70,7 @@ body::before{
   min-height:100vh;
   display:flex;
   justify-content:center;
-  padding:18px 16px calc(18px + env(safe-area-inset-bottom));
+  padding:18px 16px env(safe-area-inset-bottom);
 }
 
 .panel{
@@ -157,11 +157,15 @@ a.dotty img{
   object-fit:contain;
   padding:10px;
 
-  /* haunting glow (green-cyan) */
+  /* FORCE true PNG transparency (kills white matte) */
+  background:transparent;
+  mix-blend-mode:normal;
+
+  /* stronger haunting glow */
   filter:
-    drop-shadow(0 0 10px rgba(120,255,190,.35))
-    drop-shadow(0 0 22px rgba(80,200,150,.28))
-    drop-shadow(0 0 44px rgba(60,170,120,.18));
+    drop-shadow(0 0 14px rgba(140,255,210,.55))
+    drop-shadow(0 0 32px rgba(90,220,170,.45))
+    drop-shadow(0 0 70px rgba(60,180,130,.30));
 }
 
 /* outer aura behind logo */
