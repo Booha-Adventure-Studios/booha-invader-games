@@ -1,0 +1,4041 @@
+<!-- =========================
+CHUNK 1 / 3
+HEAD + STYLE
+(doctype → </head>)
+========================= -->
+
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport"
+content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+
+<title>Booha Invaders — DOTTY</title>
+<style>
+  html, body{
+  width: 100%;
+  position: fixed;
+  inset: 0;
+  touch-action: none;
+  
+  margin: 0;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  overscroll-behavior: none;           /* Android/Chrome + some others */
+  -webkit-overflow-scrolling: auto;
+}
+
+canvas{
+  display: block;
+  width: 100vw;
+  height: 100%;
+  touch-action: none;                  /* blocks scroll/pinch on supported browsers */
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+
+#gameWrap{
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+}
+
+  
+/* =========================
+   Booha Invaders — Start Overlay (CLEAN)
+   Black + Pink glow
+   JP: white / EN: light green
+   START button: gradient + BLACK text
+   Everything centered + tighter spacing
+   ========================= */
+
+#tiltOverlay{
+  z-index: 100000;   /* higher than rotateOverlay + mobileHoldControls */
+  pointer-events: auto;
+}
+
+#startOverlay{
+  touch-action: none;
+}
+
+/* allow only vertical scroll inside the panel */
+#startOverlay > div{
+  touch-action: pan-y;
+}
+  
+  
+#startOverlay{
+  background: rgba(0,0,0,.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color:#ffffff; /* JP default */
+}
+
+#startOverlay{
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+ 
+ 
+/* panel (inner div) */
+#startOverlay > div{
+  background: rgba(0,0,0,.78);
+  border: 1px solid rgba(255, 90, 170, .45);
+  box-shadow:
+    0 0 22px rgba(255, 90, 170, .35),
+    0 0 65px rgba(255, 90, 170, .18);
+  text-align: center;
+  padding: 18px 16px 14px; /* tighter bottom */
+}
+
+#startOverlay > div{
+  width: min(560px, 92vw);
+  border-radius: 18px;
+}
+
+#startOverlay > div{
+  width: min(560px, 92vw);
+  border-radius: 18px;
+
+  max-height: calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+ 
+ 
+/* tighten title spacing (JP title + EN title) */
+#startOverlay > div > div:nth-child(1){
+  margin: 0;
+  line-height: 1.15;
+}
+#startOverlay > div > div:nth-child(2){
+  margin-top: 6px;
+  line-height: 1.15;
+}
+
+/* mission card (3rd child in your overlay panel) */
+#startOverlay > div > div:nth-child(3){
+  max-width: 520px;
+  margin: 12px auto 14px;
+  padding: 12px 14px;
+  text-align: center;
+}
+
+/* list centered + no indent */
+#startOverlay ul{
+  list-style:none;
+  padding:0;
+  margin:10px 0 0;
+  text-align:center;
+}
+#startOverlay li{
+  margin: 10px 0;
+}
+
+/* Japanese bullet headers (b) */
+#startOverlay li b{
+  display:block;
+  color:#ffffff !important;
+}
+
+/* English lines: your EN lines use inline opacity styles */
+#startOverlay [style*="opacity"]{
+  color:#b9ffcf !important;
+}
+
+/* Remove the old BGM info lines (if still present) */
+#startOverlay [style*="BGM starts"],
+#startOverlay [style*="BGMがはじまります"]{
+  display:none !important;
+}
+
+/* START button: keep gradient + force BLACK text */
+#startBtn{
+  background: linear-gradient(90deg, rgba(255,126,185,.95), rgba(255,209,102,.98)) !important;
+  box-shadow:
+    0 0 18px rgba(255, 90, 170, .45),
+    0 0 40px rgba(255, 90, 170, .22) !important;
+}
+
+#startBtn span{
+  color:#000 !important; /* JP + EN inside button always black */
+  opacity: 1 !important; /* prevents the EN span opacity from dimming/greening */
+}
+
+/* bottom line spacing (your "So many Dotty!") — pull closer */
+#startOverlay > div > div:last-child{
+  margin-top: 10px !important;
+  line-height: 1.2;
+}
+
+/* === OVERRIDE INLINE ALIGN (Mission / How to play) === */
+#startOverlay div[style*="text-align:left"]{
+  text-align:center !important;
+}
+
+/* === FORCE START BUTTON TEXT BLACK (JP + EN) === */
+#startOverlay #startBtn span{
+  color:#000 !important;
+  opacity:1 !important;
+}
+
+#endVideo{
+  position: fixed;
+  inset: 0;
+
+  /* ✅ make it intentionally smaller */
+  width: 100vw;
+  height: 100vh;
+  max-width: 92vw;
+  max-height: 92vh;
+
+  margin: auto;                 /* ← centers it */
+  object-fit: contain;          /* ← never crop */
+  object-position: center;
+
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 99998;
+  transition: opacity 900ms ease;
+}
+
+
+#mobileHoldControls{
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 42vh;                 /* bottom “half-ish” of screen */
+  z-index: 99990;               /* below endVideo (99998), above canvas */
+  display: none;                /* we’ll enable for touch devices next */
+  touch-action: none;           /* prevents double-tap zoom inside control */
+  overscroll-behavior: none;
+}
+
+#mobileHoldControls .zone{
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 50%;
+}
+
+#mobileHoldControls .zone.left{ left: 0; }
+#mobileHoldControls .zone.right{ right: 0; }
+
+/* Optional: DEBUG (turn on to see the zones) */
+
+/*#mobileHoldControls .zone.left  { background: rgba(0,255,255,0.08); }*/
+/*#mobileHoldControls .zone.right { background: rgba(255,0,255,0.08); }*/
+
+  
+ 
+</style>
+</head>
+
+<!-- =========================
+END CHUNK 1 / 3
+========================= -->
+
+<!-- =========================
+CHUNK 2 / 3
+BODY + SCRIPT (PART 1)
+(<body> → mid-script)
+========================= -->
+
+<body>
+<div id="gameWrap">
+  <canvas id="c"></canvas>
+</div>
+
+
+<video id="endVideo" playsinline preload="auto">
+  <source src="b-i-endscreen.mp4" type="video/mp4">
+</video>
+
+<div id="mobileHoldControls" aria-hidden="true">
+  <div class="zone left"></div>
+  <div class="zone right"></div>
+</div>
+  
+
+<div id="rotateOverlay" style="
+  position:fixed; inset:0;
+  z-index:99997;
+  display:none;
+  align-items:center; justify-content:center;
+  background:rgba(0,0,0,0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color:#fff;
+  text-align:center;
+  font-family:system-ui,-apple-system,'Noto Sans JP',sans-serif;
+  padding:18px;
+">
+  <div style="
+    width:min(560px,92vw);
+    border-radius:20px;
+    padding:18px 16px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(0,0,0,.55);
+    box-shadow:0 0 22px rgba(255,126,185,.20), 0 0 60px rgba(255,209,102,.10);
+  ">
+    <div style="font-weight:900;font-size:22px;">よこ に してね！</div>
+    <div style="font-weight:800;font-size:14px;opacity:.9;margin-top:6px;">Rotate your phone to play</div>
+    <div style="margin-top:14px;font-size:12px;opacity:.85;line-height:1.5;">
+      縦（たて）では あそべません。<br>
+      横（よこ）にして スタート！
+    </div>
+  </div>
+</div>
+ 
+ 
+<div id="startOverlay" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px;background:radial-gradient(1200px 700px at 50% 35%, rgba(255,215,120,.18), rgba(0,0,0,.92));backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+  <div style="width:min(680px,92vw);border-radius:22px;padding:18px 16px 16px;background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.14);box-shadow:0 0 22px rgba(255,209,102,.20),0 0 60px rgba(255,126,185,.12);text-align:center;font-family:system-ui,-apple-system,'Noto Sans JP',sans-serif;">
+    <div style="font-weight:900;font-size:24px;">ようこそ！ブーハー・インベーダーズへ！</div>
+    <div style="font-weight:800;font-size:16px;opacity:.9;margin-top:2px;">WELCOME TO BOOHA INVADERS!</div>
+
+    <div style="margin:14px auto 14px;padding:14px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);text-align:left;">
+      <div style="font-weight:900;font-size:18px;">ミッション１：ドッティ</div>
+      <div style="font-weight:800;font-size:14px;opacity:.9;margin-top:2px;">Mission 1: Dotty</div>
+
+      <div style="margin-top:10px;font-weight:900;">あそびかた</div>
+      <div style="font-weight:800;font-size:12px;opacity:.85;margin-top:1px;">How to Play</div>
+
+      <ul style="margin:10px 0 0;padding-left:18px;line-height:1.35;font-size:14px;">
+        <li style="margin:8px 0;"><b>左右にうごかして よけよう！</b><div style="opacity:.85;font-size:12px;margin-top:2px;">Drag (mobile) / Arrow keys (desktop)</div></li>
+        <li style="margin:8px 0;"><b>ブーハーは じどうで うつ！</b><div style="opacity:.85;font-size:12px;margin-top:2px;">Booha shoots automatically</div></li>
+        <li style="margin:8px 0;"><b>クイズに こたえて すすもう！</b><div style="opacity:.85;font-size:12px;margin-top:2px;">Answer questions to progress</div></li>
+        <li style="margin:8px 0;"><b>あめを とると パワーアップ！</b><div style="opacity:.85;font-size:12px;margin-top:2px;">Get candy to power up</div></li>
+      </ul>
+    </div>
+
+    <button id="startBtn" type="button" style="width:min(420px,92vw);border:none;border-radius:999px;padding:14px 18px 12px;cursor:pointer;background:linear-gradient(90deg, rgba(255,126,185,.95), rgba(255,209,102,.98));box-shadow:0 0 18px rgba(255,126,185,.35),0 0 30px rgba(255,209,102,.25);">
+      <span style="display:block;font-weight:900;font-size:20px;color:#000;">スタート！</span>
+      <span style="display:block;font-weight:900;font-size:14px;color:#000;opacity:.9;margin-top:2px;">START!</span>
+    </button>
+
+  <div style="margin-top:6px;">
+  <div style="font-size:13px;font-weight:700;">
+    ドッティが多すぎる！
+  </div>
+  <div style="margin-top:2px;font-size:12px;opacity:.85;">
+    So many Dotty!
+  </div>
+</div>
+
+</div> <!-- close panel -->
+</div> <!-- close startOverlay -->
+
+<!-- TILT PROMPT (shows after Start) -->
+<div id="tiltOverlay" style="
+  position:fixed;
+  inset:0;
+  z-index:100000;
+  display:none;
+  pointer-events:auto;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:
+  radial-gradient(
+    800px 500px at 50% 40%,
+    rgba(255,180,220,0.10),
+    rgba(0,0,0,0.82)
+  );
+backdrop-filter: blur(10px);
+-webkit-backdrop-filter: blur(10px);
+
+">
+
+  <div style="
+    width:min(560px, 92vw);
+    border-radius:22px;
+    padding:18px 16px 16px;
+    background:rgba(8,10,18,0.72);
+    box-shadow:0 18px 50px rgba(0,0,0,0.55);
+    border:1px solid rgba(255,255,255,0.10);
+    text-align:center;
+  ">
+    <div style="font:900 24px system-ui,-apple-system,sans-serif; color:rgba(255,255,255,0.95); letter-spacing:0.5px;">
+      Tilt Controls?
+    </div>
+    <div style="margin-top:4px; font:900 18px system-ui,-apple-system,sans-serif; color:rgba(255,230,120,0.95);">
+      たおして うごかす？
+    </div>
+
+    <div style="margin-top:10px; font:800 15px system-ui,-apple-system,sans-serif; color:rgba(255,255,255,0.78); line-height:1.35;">
+      Move Booha by tilting your phone.
+    </div>
+    <div style="margin-top:4px; font:900 15px system-ui,-apple-system,sans-serif; color:rgba(185,255,207,0.92); line-height:1.35;">
+      スマホを たおして ブーハーを うごかすよ。
+    </div>
+
+    <div style="margin-top:8px; font:800 15px system-ui,-apple-system,sans-serif; color:rgba(255,255,255,0.78); line-height:1.35;">
+      Or choose Finger control.
+    </div>
+    <div style="margin-top:4px; font:900 15px system-ui,-apple-system,sans-serif; color:rgba(185,255,207,0.92); line-height:1.35;">
+      それとも ゆびで うごかす？
+    </div>
+
+    <div style="display:flex; gap:12px; margin-top:16px;">
+      <button id="tiltYesBtn" style="
+        flex:1; padding:14px 12px; border-radius:18px; border:none;
+        font:900 18px system-ui,-apple-system,sans-serif;
+        background:linear-gradient(180deg, rgba(120,220,255,0.95), rgba(90,120,255,0.92));
+        color:#06101f;
+        box-shadow:0 10px 26px rgba(80,140,255,0.35);
+        line-height:1.1;
+      ">
+        YES (Tilt)<br><span style="font:900 14px system-ui,-apple-system,sans-serif; opacity:0.92;">はい（たおす）</span>
+      </button>
+
+      <button id="tiltNoBtn" style="
+        flex:1; padding:14px 12px; border-radius:18px; border:none;
+        font:900 18px system-ui,-apple-system,sans-serif;
+        background:linear-gradient(180deg, rgba(255,210,120,0.95), rgba(255,140,200,0.90));
+        color:#1a0711;
+        box-shadow:0 10px 26px rgba(255,140,200,0.25);
+        line-height:1.1;
+      ">
+        NO (Finger)<br><span style="font:900 14px system-ui,-apple-system,sans-serif; opacity:0.92;">いいえ（ゆび）</span>
+      </button>
+    </div>
+
+    <div id="tiltMsg" style="
+      margin-top:12px;
+      font:800 13px system-ui,-apple-system,sans-serif;
+      color:rgba(255,255,255,0.75);
+      min-height:18px;
+    "></div>
+    <div id="tiltMsgJP" style="
+      margin-top:4px;
+      font:900 13px system-ui,-apple-system,sans-serif;
+      color:rgba(255,230,120,0.90);
+      min-height:18px;
+    "></div>
+  </div>
+</div>
+
+  
+<script>
+//debugger
+window.addEventListener("error", (e)=>{
+  document.body.insertAdjacentHTML("beforeend",
+    `<div style="position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;
+      background:#000c;color:#fff;padding:10px;border-radius:12px;font:12px/1.4 system-ui">
+      <b>JS ERROR</b><br>${(e.error && e.error.stack) ? e.error.stack : e.message}
+    </div>`
+  );
+});
+
+window.addEventListener("unhandledrejection", (e)=>{
+  document.body.insertAdjacentHTML("beforeend",
+    `<div style="position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;
+      background:#000c;color:#fff;padding:10px;border-radius:12px;font:12px/1.4 system-ui">
+      <b>PROMISE ERROR</b><br>${e.reason && e.reason.stack ? e.reason.stack : e.reason}
+    </div>`
+  );
+});
+//debugger
+// =======================
+// CHUNK A — GLOBALS + RESIZE + FIRING (ANTI-SPRAY FINAL)
+// - NO tap shooting
+// - Auto fire ONLY when fully still
+// - Boost shots are handled HERE (not inside update())
+// =======================
+
+//Globals
+let booFireTimer = 0;
+let bgm = null;      // main game BGM
+let bossBgm = null;  // boss BGM
+let booWeaponLevel = 1; // 1=single, 2=spread, 3=better spread
+let dottyKills = 0;
+let dottyGold = false;   // becomes true after first 1000
+
+function applyWeaponLevelForWave(w){
+  const target =
+    (w >= 17) ? 3 :
+    (w >=  9) ? 2 : 1;
+
+  // never downgrade
+  booWeaponLevel = Math.max(booWeaponLevel, target);
+}
+  
+  
+let dottyPop = 0;        // 0..1 bounce amount
+let endVideo = null;
+let endPlaying = false;     // lock so it triggers once
+let endFadeStarted = false; // optional extra safety
+let started = false;
+let paused = false;  
+let _needRotateLast = null;
+let _gateTimer = 0;
+let GAME_SCALE = 1;  
+let LOCKED_SCALE = 1;
+let tiltVx = 0;
+  
+let pointerDown = false;
+let pointerX = null;
+let dragOffsetX = 0;
+  
+
+let TILT_ENABLED = false;
+let tiltGamma = 0;
+let tiltSmooth = 0;
+let tiltBaseline = 0;
+
+let candySfx = null;
+
+function inEdgeZone(clientX, edgePx = 30){
+  const vw = (typeof viewportW === "function")
+    ? viewportW()
+    : window.innerWidth;
+  return (clientX <= edgePx) || (clientX >= vw - edgePx);
+}
+  
+
+function playCandySfx(){
+  try{
+    if(!candySfx) return;
+    candySfx.currentTime = 0;
+    const p = candySfx.play();
+    if(p && p.catch) p.catch(()=>{});
+  } catch(_){}
+}
+
+
+  
+
+const tiltDead = 4.0; //Booha move-smaller=moves constantly 
+const tiltMaxDeg = 8; //How much to tilt phone for movement
+const tiltMaxSpeed = 380; //Booha speed pixels per second
+
+function calibrateTilt(){
+  tiltSmooth = tiltGamma;   // force sync first
+  tiltBaseline = tiltGamma;
+}
+
+function handleTiltEvent(e){
+  const beta  = (typeof e.beta  === "number") ? e.beta  : 0;
+  const gamma = (typeof e.gamma === "number") ? e.gamma : 0;
+
+  const ang = (screen.orientation && typeof screen.orientation.angle === "number")
+    ? screen.orientation.angle
+    : (typeof window.orientation === "number" ? window.orientation : 0);
+
+  // left/right tilt in *landscape*
+  let lr = gamma;
+  if(ang === 90) lr = beta;
+  else if(ang === -90 || ang === 270) lr = -beta;
+
+  tiltGamma = lr;
+  tiltSmooth = tiltSmooth * 0.85 + tiltGamma * 0.15;
+}
+
+
+
+function showTiltPromptAndThenStartWave1(){
+
+  // ✅ desktop: skip prompt
+  if(!IS_COARSE){
+    TILT_ENABLED = false;
+    startWave(1);
+    return;
+  }
+
+  const tiltOverlay = document.getElementById("tiltOverlay");
+  const yesBtn = document.getElementById("tiltYesBtn");
+  const noBtn  = document.getElementById("tiltNoBtn");
+  const msgEl  = document.getElementById("tiltMsg");
+
+  if(!tiltOverlay || !yesBtn || !noBtn){
+    startWave(1);
+    return;
+  }
+
+  const rotateOverlayEl  = document.getElementById("rotateOverlay");
+  const mobileControlsEl = document.getElementById("mobileHoldControls");
+
+  // ✅ freeze while choosing
+  paused = true;
+  msgEl.textContent = "Choose your control style.";
+
+  // ✅ make tilt overlay the ONLY clickable layer
+  if(rotateOverlayEl)  rotateOverlayEl.style.pointerEvents = "none";
+  if(mobileControlsEl) mobileControlsEl.style.pointerEvents = "none";
+  if(canvas) canvas.style.pointerEvents = "none";
+
+  tiltOverlay.style.display = "flex";
+
+  const cleanup = ()=>{
+    tiltOverlay.style.display = "none";
+
+    // restore normal input layers
+    if(rotateOverlayEl)  rotateOverlayEl.style.pointerEvents = "auto";
+    if(mobileControlsEl) mobileControlsEl.style.pointerEvents = "auto";
+    if(canvas) canvas.style.pointerEvents = "auto";
+
+    paused = false;
+
+    yesBtn.onclick = null;
+    noBtn.onclick  = null;
+  };
+
+  // ✅ bind directly to buttons (most reliable on iOS)
+ yesBtn.onclick = async (e)=>{
+  e.preventDefault();
+  e.stopPropagation();
+
+  // iOS Safari requires explicit permission
+  if(typeof DeviceOrientationEvent !== "undefined" &&
+     typeof DeviceOrientationEvent.requestPermission === "function"){
+    try{
+      const res = await DeviceOrientationEvent.requestPermission();
+      if(res !== "granted"){
+        // user said no → fall back safely
+        TILT_ENABLED = false;
+        cleanup();
+        startWave(1);
+        return;
+      }
+    } catch(_){
+      TILT_ENABLED = false;
+      cleanup();
+      startWave(1);
+      return;
+    }
+  }
+
+  TILT_ENABLED = true;
+  calibrateTilt();
+  cleanup();
+  startWave(1);
+};
+
+
+  noBtn.onclick = (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    TILT_ENABLED = false;
+    cleanup();
+    startWave(1);
+  };
+}
+
+
+// coarse pointer = phones/tablets (desktop stays exact)
+const IS_COARSE = (window.matchMedia && window.matchMedia("(pointer:coarse)").matches);
+
+// ✅ DO NOT force-hide here if you use finger controls.
+// Leave display control to your start flow / choice.
+// document.getElementById("mobileHoldControls").style.display = "none";
+
+const rotateOverlay = document.getElementById("rotateOverlay");
+
+function U(){ return Math.min(viewportW(), viewportH()); }
+function isLandscape(){ return viewportW() > viewportH(); }
+
+const HUD_PAD = 12;
+
+function computeGameScale(){
+  if(!isLandscape()) return 1;
+  const u = U();
+  if(u <= 430) return 0.58;
+  if(u <= 520) return 0.62;
+  return 1;
+}
+
+const SAFE = { top: 0, right: 0 };
+
+function worldScale(){
+  return started ? LOCKED_SCALE : GAME_SCALE;
+}
+
+// -----------------------
+// iOS-only sizing cap helper (keeps iPhone from blowing up)
+// THE iOS is fucking up)
+// -----------------------
+function isIOS(){
+  return /iP(ad|hone|od)/.test(navigator.userAgent);
+}
+
+// "Dotty ceiling" in pixels, matching spawnBug()
+function dottyCeilPx(){
+  return 72 * worldScale(); // bw max in spawnBug()
+}
+
+// On iOS only, cap a size to Dotty's ceiling * ratio
+// Example: Booha ratio 86/72, Rocks ratio 150/72
+function capToDottyOnIOS(sizePx, ratio){
+  if(!isIOS()) return sizePx;
+  const cap = dottyCeilPx() * ratio;
+  return Math.min(sizePx, cap);
+}
+
+////SCALING PROBLEMS???  
+
+function W(){ return viewportW(); }
+function H(){ return viewportH(); }
+
+
+function viewportW(){
+  return Math.floor(
+    window.visualViewport?.width ||
+    document.documentElement.clientWidth ||
+    window.innerWidth
+  );
+}
+
+function viewportH(){
+  return Math.floor(
+    window.visualViewport?.height ||
+    document.documentElement.clientHeight ||
+    window.innerHeight
+  );
+}
+
+function isSmallLandscapePhone(){
+  // “phone landscape mode” in your system is defined by GAME_SCALE < 1
+  // This avoids pointer/coarse lying in emulators and iOS.
+  return isLandscape() && GAME_SCALE < 0.999;
+}
+
+function shotScale(){
+  return isSmallLandscapePhone() ? GAME_SCALE : 1;
+}
+
+function candyScale(){
+  return isSmallLandscapePhone() ? GAME_SCALE : 1;
+}
+
+function dottyFireScale(){
+  return isSmallLandscapePhone() ? 1.25 : 1;
+}
+  
+
+  
+function updateSafeArea(){
+  const s = getComputedStyle(document.documentElement);
+
+  SAFE.top   = parseInt(s.getPropertyValue("--safe-top"))   || 0;
+  SAFE.right = parseInt(s.getPropertyValue("--safe-right")) || 0;
+}
+
+// map CSS env() → JS-readable vars
+(function initSafeCSS(){
+  const style = document.createElement("style");
+  style.textContent = `
+    :root{
+      --safe-top: env(safe-area-inset-top);
+      --safe-right: env(safe-area-inset-right);
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+updateSafeArea();
+addEventListener("resize", updateSafeArea);
+addEventListener("orientationchange", updateSafeArea);
+ 
+
+ 
+function updateOrientationGate(){
+  if(!started) GAME_SCALE = computeGameScale();
+  const needRotate = !isLandscape();
+
+  // ✅ prevent flicker: only act when state actually changes
+  if(needRotate === _needRotateLast) return;
+  _needRotateLast = needRotate;
+
+  if(rotateOverlay){
+    rotateOverlay.style.display = needRotate ? "flex" : "none";
+  }
+
+  if(started){
+    if(needRotate){
+      paused = true;
+      pauseAllMusic();
+    } else {
+      paused = false;
+      resumeAllMusic();
+    }
+  }
+}
+
+
+function scheduleOrientationGate(){
+  clearTimeout(_gateTimer);
+  _gateTimer = setTimeout(()=>{
+    updateSafeArea();          // ensure SAFE is fresh
+    updateOrientationGate();   // run once after resize/orientation settles
+  }, 120);
+}
+ 
+ 
+// run it once and whenever the screen changes
+addEventListener("resize", scheduleOrientationGate);
+addEventListener("orientationchange", scheduleOrientationGate);
+scheduleOrientationGate(); // ✅ establish correct state on load
+
+ 
+ 
+ 
+
+// =========================
+// PAUSE (Step 1)
+// =========================
+
+
+// =========================
+// PAUSE BUTTON STATE
+// =========================
+const PAUSE_BTN = { x:0, y:0, w:44, h:44 };
+
+// Pause/resume music using YOUR actual audio vars (bgm / bossBgm)
+function pauseAllMusic(){
+  try { if(bgm && !bgm.paused) bgm.pause(); } catch(_){}
+  try { if(bossBgm && !bossBgm.paused) bossBgm.pause(); } catch(_){}
+}
+
+function resumeAllMusic(){
+  try{
+    if(typeof bossAlive !== "undefined" && bossAlive && bossBgm){
+      bossBgm.play().catch(()=>{});
+      return;
+    }
+  } catch(_){}
+  try { if(bgm) bgm.play().catch(()=>{}); } catch(_){}
+}
+
+function setPaused(on){
+  if(paused === on) return;
+  paused = on;
+  if(paused) pauseAllMusic();
+  else resumeAllMusic();
+}
+
+// true globals (do NOT put on player)
+let booAutoCD = 0;   // normal cadence cooldown
+let booPinkCD = 0;   // boost cadence cooldown (pink)
+
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d", { alpha:false });
+
+const gameWrap = document.getElementById("gameWrap");
+
+function viewportX(){
+  return window.visualViewport ? visualViewport.offsetLeft : 0;
+}
+function viewportY(){
+  return window.visualViewport ? visualViewport.offsetTop : 0;
+}
+  
+
+function disableDoubleTapZoomScoped(root){
+  try{
+    const el = root || document.getElementById("game") || document.documentElement;
+    let lastTouchEnd = 0;
+
+    el.addEventListener("touchend", (ev)=>{
+      // allow zoom on inputs if you ever add them
+      const t = ev.target;
+      if(t && (t.closest?.('input,textarea,select,[data-allow-zoom="true"]'))) return;
+
+      const now = Date.now();
+      if(now - lastTouchEnd <= 300){
+        ev.preventDefault(); // blocks double-tap zoom
+      }
+      lastTouchEnd = now;
+    }, { passive:false, capture:true });
+
+    el.addEventListener("touchstart", (ev)=>{
+      if(ev.touches && ev.touches.length > 1){
+        ev.preventDefault(); // blocks pinch
+      }
+    }, { passive:false, capture:true });
+
+    el.addEventListener("gesturestart", (ev)=>{
+      ev.preventDefault(); // older iOS gesture events
+    }, { passive:false, capture:true });
+
+  } catch(_){}
+}
+  
+
+// -----------------------
+// Mobile Gesture Guard (canvas-only)
+// -----------------------
+(function(el){
+  if(!el) return;
+
+  // iOS: block pinch zoom
+  el.addEventListener("touchstart", e => {
+    if(e.touches.length > 1) e.preventDefault();
+  }, { passive:false });
+
+  // iOS: block double-tap zoom
+  let lastTouchEnd = 0;
+  el.addEventListener("touchend", e => {
+    const now = Date.now();
+    if(now - lastTouchEnd < 300) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive:false });
+
+})(document.getElementById("c"));
+
+// -----------------------
+// Android Back Gesture Trap
+// -----------------------
+history.pushState(null, "", location.href);
+
+window.addEventListener("popstate", () => {
+  history.pushState(null, "", location.href);
+
+  // Optional: turn back into pause
+  if(started && !paused){
+    setPaused(true);
+  }
+});
+  
+
+// -----------------------
+// Mobile: prevent page/gesture scrolling (Android + iOS)
+// Place once during init (after IS_COARSE is defined)
+// -----------------------
+/*if(IS_COARSE){
+  const root = document.documentElement;
+
+  // CSS overscroll lock (Android/Chrome + some others)
+  document.body.style.overscrollBehavior = "none";
+  root.style.overscrollBehavior = "none";
+
+  // iOS Safari: lock page scrolling (prevents "sliding" feel)
+  document.body.style.position = "fixed";
+  document.body.style.inset = "0";
+  document.body.style.width = "100%";
+  document.body.style.height = "100%";
+  document.body.style.overflow = "hidden";
+}*/
+  
+// -----------------------
+// DPR / resize
+// -----------------------
+const DPR_CAP = 2;
+let DPR = 1;
+
+function viewportW(){
+  return Math.floor((window.visualViewport?.width ?? window.innerWidth));
+}
+function viewportH(){
+  return Math.floor((window.visualViewport?.height ?? window.innerHeight));
+}
+
+function resize(){
+  if(started && !paused) return;
+
+  const vw = viewportW();
+  const vh = viewportH();
+
+  // ✅ ADD THIS
+  DPR = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+
+  canvas.style.width  = vw + "px";
+  canvas.style.height = vh + "px";
+
+  canvas.width  = Math.floor(vw * DPR);
+  canvas.height = Math.floor(vh * DPR);
+
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  if(gameWrap){
+    gameWrap.style.transform =
+      `translate(${viewportX()}px, ${viewportY()}px)`;
+  }
+}
+
+
+
+// ✅ iOS Safari viewport drift fix
+if(window.visualViewport){
+  visualViewport.addEventListener("resize", resize, { passive:true });
+  visualViewport.addEventListener("scroll", resize, { passive:true });
+}
+  
+
+  
+addEventListener("resize", resize);
+
+
+
+// -----------------------
+// Auto firing (movement-locked) + boost lives here
+// -----------------------
+function updateFiring(dt){
+  // keep booFireTimer alive for the draw() shooting pose
+  booFireTimer = Math.max(0, booFireTimer - dt);
+
+  if(!started) return;
+  if(player.energy <= 0) return;
+  if(quizOpen) return;
+
+  // tick cooldowns
+  booAutoCD = Math.max(0, booAutoCD - dt);
+  booPinkCD = Math.max(0, booPinkCD - dt);
+
+  // ✅ stand-still rule (hard lock)
+  if(playerMoving) return;
+  if(shootResumeDelay > 0) return;
+
+  // ✅ boost = pink mode (0..3)
+  const stack = clamp((player.boost || 0), 0, 3);
+  const isPink = (stack > 0);
+
+  // -------------------------
+  // NORMAL (gold): one shot at a time, slow cadence
+  // -------------------------
+  if(!isPink){
+    if(!canFireNormal()) return;
+    if(booAutoCD > 0) return;
+
+    fireBooShot(false);
+    booFireTimer = 0.12;
+
+    // ✅ main “no spray” knob
+    booAutoCD = 0.30;
+    return;
+  }
+
+  // -------------------------
+  // BOOST (pink): still locked to stand-still + settle
+  // and limited max shots so it can't flood the screen
+  // -------------------------
+  const maxPinkShots = [0, 1, 2, 3][stack];      // ✅ hard cap
+  const cdPink = clamp(0.22 - 0.03*(stack-1), 0.14, 0.30);
+
+  if(booPinkCD > 0) return;
+  if(booShots.length >= maxPinkShots) return;
+
+  fireBooShot(true);
+  booFireTimer = 0.12;
+  booPinkCD = cdPink;
+}
+
+
+ 
+  // -----------------------
+  // Assets (folders)
+  // -----------------------
+  const ASSETS = {
+    bg:       "assets/background.png",
+    booIdle:  "assets/booha-invad-1.png",
+    booShoot: "assets/booha-invad-2.png",
+    bug:      "assets/bug-1.png",
+    candy:    "assets/candy.png",
+    rocks: [
+      "assets/rock1.png",
+      "assets/rock2.png",
+      "assets/rock3.png",
+      "assets/rock4.png"
+    ]
+  };
+
+  function loadImg(src){
+    return new Promise((res, rej)=>{
+      const img = new Image();
+      img.onload = ()=>res(img);
+      img.onerror = ()=>rej(new Error("Failed to load: " + src));
+      img.src = src;
+    });
+  }
+
+  const IMG = {};
+// Dotty icon for HUD
+loadImg("assets/bug-1.png").then(img=>{
+  IMG.dotty = img;
+}).catch(console.warn);
+
+ // -----------------------
+// Helpers
+// -----------------------
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const rand  = (a,b)=>a + Math.random()*(b-a);
+
+function aabb(ax,ay,aw,ah, bx,by,bw,bh){
+  return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
+}
+
+// cover background (no distortion)
+function drawCover(img){
+  const r = canvas.getBoundingClientRect();
+  const W = r.width, H = r.height;
+
+  const iw = img.width, ih = img.height;
+  const s = Math.max(W/iw, H/ih);
+  const dw = iw*s, dh = ih*s;
+  const dx = (W - dw)/2;
+  const dy = (H - dh)/2;
+  ctx.drawImage(img, dx, dy, dw, dh);
+}
+
+// -----------------------
+// UI helpers
+// -----------------------
+function showStartOverlay(){
+  if(started) return; // ⛔ NEVER mid-game
+  const so = document.getElementById("startOverlay");
+  if(so) so.style.display = "flex";
+}
+
+  // -----------------------
+  // Question Popup (Multiple Choice 1–100)
+  // ✅ SINGLE SOURCE OF TRUTH (declare ONCE here)
+  // -----------------------
+  let quizOpen  = false;
+  let quizCount = 0;        // completed questions (Dotty scaling)
+  let quizDeck  = [];
+  let quizPos   = 0;
+  let quizQ     = null;     // { n, choices:[...], correctIndex }
+
+  // -----------------------
+  // Quiz helpers (1–100 multiple choice)
+  // -----------------------
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j = (Math.random()*(i+1))|0;
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  const ONES  = ["zero","one","two","three","four","five","six","seven","eight","nine"];
+  const TEENS = ["ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+  const TENS  = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+
+ function numberToWords(n){
+  if(n === 100) return "one hundred";
+  if(n < 10) return ONES[n];
+  if(n < 20) return TEENS[n-10];
+  const t = (n/10)|0;
+  const o = n % 10;
+  if(o === 0) return TENS[t];
+  return TENS[t] + "-" + ONES[o];
+}
+
+
+function splitDigitsWords(n){
+  if(n === 100) return "one zero zero";
+  const t = (n/10)|0;
+  const o = n % 10;
+  return ONES[t] + " " + ONES[o];
+}
+
+function twoEightyStyle(n){
+  if(n === 100) return "one-hundred";
+  const t = (n/10)|0;
+  return ONES[t] + "-" + TENS[t];
+}
+
+function punChoice(n){
+  const H = { one:"won", two:"too", four:"for", eight:"ate", zero:"oh" };
+  if(n === 100) return "won-hundred";
+  if(n >= 10){
+    const t = (n/10)|0;
+    const o = n % 10;
+    const a = H[ONES[t]] || ONES[t];
+    const b = H[ONES[o]] || ONES[o];
+    return a + "-" + b;
+  }
+  const w = ONES[n];
+  return (H[w] || ("the-" + w));
+}
+
+  
+  function makeQuestion(n){
+    const correct = numberToWords(n);
+
+    // 3 wrongs (intentionally a little silly)
+    let wrong1, wrong2, wrong3;
+
+    if(n >= 10){
+      wrong1 = splitDigitsWords(n);
+      wrong2 = twoEightyStyle(n);
+      wrong3 = punChoice(n);
+    } else {
+      wrong1 = "the " + ONES[n];
+      wrong2 = ONES[n] + "-" + ONES[n];
+      wrong3 = punChoice(n);
+    }
+
+    // de-dupe + ensure not equal to correct
+    const pool = [];
+    for(const w of [wrong1, wrong2, wrong3]){
+      if(!w) continue;
+      if(w === correct) continue;
+      if(pool.includes(w)) continue;
+      pool.push(w);
+    }
+    while(pool.length < 3){
+      const w = TENS[2 + ((Math.random()*8)|0)] + "-" + ONES[(Math.random()*10)|0];
+      if(w !== correct && !pool.includes(w)) pool.push(w);
+    }
+
+    const choices = [correct, pool[0], pool[1], pool[2]];
+    shuffle(choices);
+    return { n, choices, correctIndex: choices.indexOf(correct) };
+  }
+
+  function buildQuizDeck(){
+    quizDeck = [];
+    for(let n=1;n<=100;n++) quizDeck.push(n);
+    shuffle(quizDeck);
+    quizPos = 0;
+  }
+
+  function nextQuiz(){
+    if(!quizDeck.length) buildQuizDeck();
+    if(quizPos >= quizDeck.length){
+      shuffle(quizDeck);
+      quizPos = 0;
+    }
+    const n = quizDeck[quizPos++];
+    quizQ = makeQuestion(n);
+  }
+
+
+function triggerEndVideo(){
+  if(endPlaying) return;
+  endPlaying = true;
+
+  if(IS_COARSE) document.getElementById("mobileHoldControls").style.display = "none";
+
+  setPaused(false);
+  pointerDown = false;
+  pointerX = null;
+
+  // stop music immediately
+  try{ pauseAllMusic(); } catch(_){}
+
+  // hide overlays that might cover video (quiz, etc.)
+  quizOpen = false;
+
+  if(endVideo){
+    endVideo.style.pointerEvents = "auto";
+    endVideo.style.opacity = "0";
+
+    endVideo.pause();
+    endVideo.currentTime = 0;
+    endVideo.muted = false;
+
+    const p = endVideo.play();
+    if(p && p.catch) p.catch(()=>{});
+
+    requestAnimationFrame(()=>{
+      endVideo.style.opacity = "1";
+    });
+  }
+}
+
+function quizTapToKey(px, py){
+  if(!quizOpen || !quizQ) return false;
+
+  // Must match drawQuizOverlay() geometry
+  const r = canvas.getBoundingClientRect();
+  const W = r.width, H = r.height;
+
+  const cx = W/2;
+
+  const isMob = (typeof IS_COARSE !== "undefined")
+    ? IS_COARSE
+    : (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+
+  const minD = Math.min(W, H);
+  const s = isMob ? clamp(minD / 560, 0.78, 0.95) : 1;
+
+  const cardW = clamp(W * (isMob ? 0.90 : 0.76), 280, 620);
+  const btnW  = clamp(cardW * 0.94, 260, 560);
+  const btnH  = Math.round(56 * s);
+  const gap   = Math.round(12 * s);
+
+  const extraBelow = Math.round(72 * s);
+  const stackH = 4*btnH + 3*gap + extraBelow;
+  const topTarget = H * (isMob ? 0.38 : 0.42);
+  const bottomPad = Math.round(18 * s);
+
+  let startY = topTarget;
+  if(isMob && (startY + stackH > H - bottomPad)){
+    startY = Math.max(
+      Math.round(H - bottomPad - stackH),
+      Math.round(H * 0.20)
+    );
+  }
+
+  const x = cx - btnW/2;
+
+  // hit test
+  if(px < x || px > x + btnW) return false;
+
+  for(let i=0;i<4;i++){
+    const y = startY + i*(btnH+gap);
+    if(py >= y && py <= y + btnH){
+      const k = String(i+1);
+      // simulate existing keyboard path (1–4)
+      window.dispatchEvent(new KeyboardEvent("keydown", { key:k, code:"Digit"+k, bubbles:true }));
+      return true;
+    }
+  }
+  return false;
+}
+  
+
+ // -----------------------
+  // NOTE: Quiz overlay drawing DOES NOT belong in Chunk 2 update section.
+  // Keeping your code (not deleting) but wrapping it so it doesn't run here.
+  // Chunk 3 will call drawQuizOverlay() from inside draw().
+// =========================
+// QUIZ OVERLAY (Multiple Choice) shows red/green + message
+// =========================
+function drawQuizOverlay(){
+
+  if(quizOpen && quizQ){
+    ctx.save();
+
+    const r = canvas.getBoundingClientRect();
+    const W = r.width, H = r.height;
+
+    const cx = W/2, cy = H/2;
+    const minD = Math.min(W, H);
+    const t = performance.now()/1000;
+
+    // "mobile-ish" detection (keeps desktop unchanged)
+    const isMob = (typeof IS_COARSE !== "undefined")
+      ? IS_COARSE
+      : (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+
+    // scale for phones (subtle; desktop stays 1)
+    const s = isMob ? clamp(minD / 560, 0.78, 0.95) : 1;
+
+    // -----------------------
+    // helpers (local)
+    // -----------------------
+    function rr(x,y,w,h,r){
+      r = Math.max(0, Math.min(r, Math.min(w,h)/2));
+      ctx.beginPath();
+      ctx.moveTo(x+r, y);
+      ctx.arcTo(x+w, y,   x+w, y+h, r);
+      ctx.arcTo(x+w, y+h, x,   y+h, r);
+      ctx.arcTo(x,   y+h, x,   y,   r);
+      ctx.arcTo(x,   y,   x+w, y,   r);
+      ctx.closePath();
+    }
+    function glowPuffs(x,y,w,h,color,alpha,blur){
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.shadowBlur = blur;
+      ctx.shadowColor = color;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      rr(x,y,w,h,Math.round(18*s));
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // -----------------------
+    // Dim + colorful Booha vignette (more "fun")
+    // -----------------------
+    ctx.fillStyle = "rgba(0,0,0,0.46)";
+    ctx.fillRect(0,0,W,H);
+
+    // soft candy aura behind the card (animated a touch)
+    const auraR0 = minD * 0.05;
+    const auraR1 = minD * (0.72 + 0.03*Math.sin(t*0.9));
+    const aura = ctx.createRadialGradient(cx, cy, auraR0, cx, cy, auraR1);
+    aura.addColorStop(0.00, "rgba(255, 210, 80, 0.12)"); // warm gold
+    aura.addColorStop(0.35, "rgba(120, 200, 255, 0.11)"); // aqua
+    aura.addColorStop(0.70, "rgba(255, 120, 210, 0.09)"); // pink
+    aura.addColorStop(1.00, "rgba(0,0,0,0.62)");
+    ctx.fillStyle = aura;
+    ctx.fillRect(0,0,W,H);
+
+    // extra vignette to keep focus
+    const r0 = minD * 0.22;
+    const r1 = minD * 0.88;
+    const vg = ctx.createRadialGradient(cx, cy, r0, cx, cy, r1);
+    vg.addColorStop(0, "rgba(0,0,0,0)");
+    vg.addColorStop(1, "rgba(0,0,0,0.72)");
+    ctx.fillStyle = vg;
+    ctx.fillRect(0,0,W,H);
+
+    // -----------------------
+    // Card geometry (fits both desktop + mobile) + MOBILE FIT
+    // -----------------------
+    const cardW = clamp(W * (isMob ? 0.90 : 0.76), 280, 620);
+    const btnW  = clamp(cardW * 0.94, 260, 560);
+    const btnH  = Math.round(56 * s);
+    const gap   = Math.round(12 * s);
+
+    // Compute a startY that keeps the whole stack on-screen (mobile)
+    const extraBelow = Math.round(72 * s);          // hint + message area
+    const stackH = 4*btnH + 3*gap + extraBelow;
+
+    const topTarget = H * (isMob ? 0.38 : 0.42);
+    const bottomPad = Math.round(18 * s);
+
+    let startY = topTarget;
+
+    // If it would clip, push it up (mobile only)
+    if(isMob && (startY + stackH > H - bottomPad)){
+      startY = Math.max(
+        Math.round(H - bottomPad - stackH),
+        Math.round(H * 0.20)
+      );
+    }
+
+    const x = cx - btnW/2;
+
+    // -----------------------
+    // Subtle Booha presence (soft ghost silhouette + eyes)
+    // -----------------------
+    (function boohaHint(){
+      const gy = H * (isMob ? 0.30 : 0.315);
+      const gw = Math.round(btnW * 0.34);
+      const gh = Math.round(gw * 0.92);
+      const gx = cx - gw/2;
+      const wob = 2 * Math.sin(t*1.5);
+
+      // ghost body (very subtle, behind number)
+      ctx.save();
+      ctx.globalAlpha = 0.08;
+      ctx.fillStyle = "rgba(255,255,255,1)";
+      rr(gx, gy-gh/2 + wob, gw, gh, Math.round(26*s));
+      ctx.fill();
+
+      // little scallop bottom
+      ctx.globalAlpha = 0.07;
+      const scallops = 4;
+      const r = gw/(scallops*2);
+      ctx.beginPath();
+      for(let i=0;i<scallops;i++){
+        const cx2 = gx + r + i*2*r;
+        const cy2 = gy + gh/2 - r + wob;
+        ctx.arc(cx2, cy2, r, 0, Math.PI, true);
+      }
+      ctx.fill();
+
+      // eyes (off-white pupils vibe)
+      ctx.globalAlpha = 0.16;
+      ctx.fillStyle = "rgba(0,0,0,1)";
+      const ex = cx;
+      const ey = gy - gh*0.10 + wob;
+      const er = Math.round(10*s);
+      ctx.beginPath();
+      ctx.arc(ex - gw*0.10, ey, er, 0, Math.PI*2);
+      ctx.arc(ex + gw*0.10, ey, er, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = "rgba(248,248,248,1)";
+      ctx.beginPath();
+      ctx.arc(ex - gw*0.10 + 3*s, ey - 2*s, 3.2*s, 0, Math.PI*2);
+      ctx.arc(ex + gw*0.10 + 3*s, ey - 2*s, 3.2*s, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.restore();
+    })();
+
+   
+    // -----------------------
+    // Buttons (round + toy-like + personality + reactions)
+    // -----------------------
+    ctx.font = `900 ${Math.round(20*s)}px system-ui, -apple-system, sans-serif`;
+    const radius = Math.round(18 * s);
+
+    for(let i=0;i<4;i++){
+      const y = startY + i*(btnH+gap);
+
+      const isCorrect = (quizSolved && i === quizQ.correctIndex);
+      const isWrong   = (quizTried && quizTried[i]);
+
+      // playful per-choice accent hues (Booha candy vibe)
+      let edge = "rgba(140, 210, 255, 0.45)"; // aqua
+      if(i === 1) edge = "rgba(255, 170, 230, 0.42)"; // pink
+      if(i === 2) edge = "rgba(255, 220, 120, 0.40)"; // gold
+      if(i === 3) edge = "rgba(160, 255, 210, 0.38)"; // mint
+
+      // base glass + depth
+      let fillA = 0.16;
+      let stroke = "rgba(255,255,255,0.24)";
+      let lift = 0;
+
+      // reactions
+      if(isWrong){
+        fillA = 0.18;
+        edge = "rgba(255,60,90,0.78)";
+        stroke = "rgba(255,60,90,0.66)";
+        lift = -1.0 * Math.sin(t*16) * s; // tiny wobble
+      }
+      if(isCorrect){
+        fillA = 0.18;
+        edge = "rgba(60,255,140,0.82)";
+        stroke = "rgba(60,255,140,0.68)";
+        lift = -2.0 * Math.abs(Math.sin(t*10)) * s; // tiny bounce
+      }
+
+      const yy = y + lift;
+
+      // outer glow puff
+      glowPuffs(x-2, yy-2, btnW+4, btnH+4, edge, 0.16, Math.round(22*s));
+
+      // button body (rounded)
+      ctx.save();
+      rr(x, yy, btnW, btnH, radius);
+      ctx.fillStyle = `rgba(255,255,255,${fillA})`;
+      ctx.fill();
+
+      // inner sheen (top highlight)
+      const gg = ctx.createLinearGradient(0, yy, 0, yy+btnH);
+      gg.addColorStop(0.0, "rgba(255,255,255,0.18)");
+      gg.addColorStop(0.35, "rgba(255,255,255,0.06)");
+      gg.addColorStop(1.0, "rgba(0,0,0,0.08)");
+      ctx.fillStyle = gg;
+      ctx.fill();
+
+      // outline
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // neon rim (top line)
+      ctx.globalAlpha = 0.55;
+      ctx.strokeStyle = edge;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x + radius, yy + 3);
+      ctx.lineTo(x + btnW - radius, yy + 3);
+      ctx.stroke();
+
+      // tiny "pressable" shadow under (subtle depth)
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.fillStyle = "rgba(0,0,0,1)";
+      rr(x, yy + btnH - 2, btnW, 10*s, 10*s);
+      ctx.fill();
+      ctx.restore();
+
+      // label text (with subtle glow when correct)
+      const label = (i+1) + ")  " + quizQ.choices[i];
+
+      ctx.save();
+      if(isCorrect){
+        ctx.shadowBlur = Math.round(18*s);
+        ctx.shadowColor = "rgba(60,255,140,0.55)";
+      } else if(isWrong){
+        ctx.shadowBlur = Math.round(16*s);
+        ctx.shadowColor = "rgba(255,60,90,0.45)";
+      } else {
+        ctx.shadowBlur = Math.round(10*s);
+        ctx.shadowColor = "rgba(255,255,255,0.18)";
+      }
+
+      ctx.fillStyle = "rgba(255,255,255,0.94)";
+      ctx.fillText(label, x + Math.round(16*s), yy + Math.round(36*s));
+      ctx.restore();
+
+      // tiny icon dot at left (adds “toy UI” feel)
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = 0.65;
+      ctx.fillStyle = edge;
+      ctx.beginPath();
+      ctx.arc(x + Math.round(12*s), yy + btnH/2, Math.round(4.2*s), 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // -----------------------
+// Big number (HUGE glow + readable outline)
+// -----------------------
+if(isMob){
+  const q = String(quizQ.n);
+
+  // candy-ish light gradient fill
+  const ng = ctx.createLinearGradient(cx - 160, 0, cx + 160, 0);
+  ng.addColorStop(0.00, "rgba(255, 220, 120, 1.00)");
+  ng.addColorStop(0.45, "rgba(255, 255, 255, 1.00)");
+  ng.addColorStop(1.00, "rgba(160, 220, 255, 1.00)");
+
+  const y = H * 0.305;
+  const numSize = Math.round(72 * s); // big + stable (mobile)
+  ctx.font = `900 ${numSize}px system-ui, -apple-system, sans-serif`;
+  ctx.textBaseline = "alphabetic";
+
+  const w = ctx.measureText(q).width;
+  const x = cx - w/2;
+
+  // 1) BIG dark back-glow (depth)
+  ctx.save();
+  ctx.shadowBlur  = Math.round(64 * s);
+  ctx.shadowColor = "rgba(0,0,0,0.92)";
+  ctx.fillStyle   = "rgba(0,0,0,0.72)";
+  ctx.fillText(q, x, y);
+  ctx.restore();
+
+  // 2) Dark outline (readability)
+  ctx.save();
+  ctx.lineJoin = "round";
+  ctx.miterLimit = 2;
+  ctx.lineWidth = Math.max(3, Math.round(10 * s));
+  ctx.strokeStyle = "rgba(0,0,0,0.78)";
+  ctx.strokeText(q, x, y);
+  ctx.restore();
+
+  // 3) Bright outer glow + candy fill
+  ctx.save();
+  ctx.shadowBlur  = Math.round(36 * s);
+  ctx.shadowColor = "rgba(255, 230, 170, 0.80)";
+  ctx.fillStyle   = ng;
+  ctx.fillText(q, x, y);
+  ctx.restore();
+
+  // 4) Tiny inner highlight (optional “pop”)
+  ctx.save();
+  ctx.globalAlpha = 0.22;
+  ctx.lineWidth = Math.max(2, Math.round(6 * s));
+  ctx.strokeStyle = "rgba(255,255,255,0.85)";
+  ctx.strokeText(q, x, y);
+  ctx.restore();
+}
+
+
+
+    // -----------------------
+    // Hint + JP message
+    // -----------------------
+    const baseY = startY + 4*(btnH+gap);
+
+    ctx.font = `800 ${Math.round(14*s)}px system-ui, -apple-system, sans-serif`;
+    ctx.fillStyle = "rgba(255,255,255,0.80)";
+    const hint = "Tap an answer or press 1–4";
+    const hw = ctx.measureText(hint).width;
+    ctx.fillText(hint, cx - hw/2, baseY + Math.round(12*s));
+
+    if(typeof quizMsg === "string" && quizMsg){
+      ctx.font = `900 ${Math.round(16*s)}px system-ui, -apple-system, sans-serif`;
+
+
+      //message glow
+      ctx.save();
+      ctx.shadowBlur = Math.round(18*s);
+      ctx.shadowColor = "rgba(255, 210, 80, 0.60)";
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      const mw = ctx.measureText(quizMsg).width;
+      ctx.fillText(quizMsg, cx - mw/2, baseY + Math.round(38*s));
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }  //✅ closes: if(quizOpen && quizQ)
+
+} // ✅ closes: function drawQuizOverlay()
+
+
+// -----------------------
+// Input (universal)
+// -----------------------
+
+const mobileControls = document.getElementById("mobileHoldControls");
+
+// MOBILE ONLY: bottom overlay controls Booha
+if(IS_COARSE && mobileControls){
+
+ mobileControls.addEventListener("pointerdown", (e)=>{
+  // 🚫 Android edge-swipe guard
+  if(IS_COARSE && inEdgeZone(e.clientX, 30)) return;
+
+  if(quizOpen) return;
+
+
+  // If paused, tapping the bottom overlay resumes (since it sits on top)
+  if(paused){
+    e.preventDefault();
+    setPaused(false);
+    return;
+  }
+
+  e.preventDefault();
+
+  pointerDown = true;
+  pointerX = e.clientX;
+
+  dragOffsetX = pointerX - (player.x + player.w/2);
+
+  try { mobileControls.setPointerCapture(e.pointerId); } catch(_){}
+}, { passive:false });
+
+
+  mobileControls.addEventListener("pointermove", (e)=>{
+    if(!pointerDown) return;
+    e.preventDefault();
+    pointerX = e.clientX;
+  }, { passive:false });
+
+  mobileControls.addEventListener("pointerup", (e)=>{
+    pointerDown = false;
+    pointerX = null;
+    try { mobileControls.releasePointerCapture(e.pointerId); } catch(_){}
+  });
+
+  mobileControls.addEventListener("pointercancel", ()=>{
+    pointerDown = false;
+    pointerX = null;
+  });
+}
+
+// -----------------------
+// ✅ ANDROID "PAGE SWIPE / REFRESH" HARD BLOCK (ADD-ONLY)
+// Blocks browser gesture scrolling while playing.
+// Keeps overlay scroll before start.
+// -----------------------
+(function lockAndroidGestures(){
+  if(!IS_COARSE) return;
+
+  function shouldBlock(){
+    // Only block during actual gameplay drag time
+    if(!started) return false;
+    if(paused) return false;
+    if(quizOpen) return false;
+    if(endPlaying) return false;
+    return true;
+  }
+
+  // Block swipe/scroll rubber-banding
+  document.addEventListener("touchmove", (e)=>{
+    if(!shouldBlock()) return;
+
+    // allow scrolling inside the overlay panel ONLY
+    const panel = e.target && e.target.closest && e.target.closest("#startOverlay > div");
+    if(panel) return;
+
+    e.preventDefault();
+  }, { passive:false, capture:true });
+
+  // Block pinch zoom
+  document.addEventListener("touchstart", (e)=>{
+    if(!shouldBlock()) return;
+    if(e.touches && e.touches.length > 1) e.preventDefault();
+  }, { passive:false, capture:true });
+
+  // Block Safari/Chrome gesture events (some Android builds fire these)
+  document.addEventListener("gesturestart", (e)=>{
+    if(shouldBlock()) e.preventDefault();
+  }, { passive:false, capture:true });
+
+  document.addEventListener("gesturechange", (e)=>{
+    if(shouldBlock()) e.preventDefault();
+  }, { passive:false, capture:true });
+
+  document.addEventListener("gestureend", (e)=>{
+    if(shouldBlock()) e.preventDefault();
+  }, { passive:false, capture:true });
+})();
+  
+  
+
+canvas.addEventListener("pointerdown", (e)=>{
+  // 🚫 Android edge-swipe guard
+  if(IS_COARSE && inEdgeZone(e.clientX, 30)) return;
+
+  // MOBILE: allow ONLY pause-button taps during play
+  if(IS_COARSE && !quizOpen && !paused){
+    if(!(started && player.energy > 0 && hitPauseBtn(e.clientX, e.clientY))) return;
+  }
+
+
+
+
+  // PAUSE: click anywhere resumes
+  if(paused){
+    e.preventDefault();
+    setPaused(false);
+    return;
+  }
+
+// QUIZ: tap an answer (do not start dragging)
+if(quizOpen){
+  const r = canvas.getBoundingClientRect();
+  const px = e.clientX - r.left;
+  const py = e.clientY - r.top;
+
+  quizTapToKey(px, py);   // ✅ single source of truth
+  return;
+}
+
+
+
+  // PAUSE: tap pause button (only during play)
+  if(started && player.energy > 0){
+    if(hitPauseBtn(e.clientX, e.clientY)){
+      e.preventDefault();
+      setPaused(true);
+      return;
+    }
+  }
+
+  // MOBILE: bottom control only
+  if(IS_COARSE){
+    const vh = (typeof viewportH === "function") ? viewportH() : window.innerHeight;
+    if(e.clientY < vh * 0.58) return; // top 58% = no control
+  }
+
+  // Normal pointer control
+  e.preventDefault();
+  pointerDown = true;
+  pointerX = e.clientX;
+  dragOffsetX = pointerX - (player.x + player.w/2);
+
+  try { canvas.setPointerCapture(e.pointerId); } catch(_) {}
+}, { passive:false });
+
+canvas.addEventListener("pointermove", (e)=>{
+  if(IS_COARSE && !quizOpen && !paused) return;
+
+
+  if(!pointerDown) return;
+  e.preventDefault();
+  pointerX = e.clientX;
+}, { passive:false });
+
+canvas.addEventListener("pointerup", (e)=>{
+ if(IS_COARSE && !quizOpen && !paused) return;
+
+
+  pointerDown = false;
+  pointerX = null;
+  try { canvas.releasePointerCapture(e.pointerId); } catch(_) {}
+});
+
+canvas.addEventListener("pointercancel", (e)=>{
+  if(IS_COARSE && !quizOpen && !paused) return;
+
+
+  pointerDown = false;
+  pointerX = null;
+  try { canvas.releasePointerCapture(e.pointerId); } catch(_) {}
+});
+
+addEventListener("mousemove", (e)=>{
+  // Desktop: ignore mouse unless dragging
+  if(!pointerDown) return;
+  pointerX = e.clientX;
+});
+
+const keys = new Set();
+
+addEventListener("keydown", (e)=>{
+
+  // PAUSE toggle (P) - only during play, not during quiz, not game over
+  if(started && player.energy > 0 && !quizOpen){
+    if(e.key === "p" || e.key === "P"){
+      e.preventDefault();
+      setPaused(!paused);
+      return; // don't also add to keys
+    }
+  }
+
+  // If paused, ignore movement keys entirely
+  if(paused) return;
+
+  if(e.key === "ArrowLeft" || e.key === "ArrowRight"){
+    e.preventDefault();
+    pointerX = null; // keyboard takes control
+  }
+  keys.add(e.key);
+
+}, { passive:false });
+
+addEventListener("keyup", (e)=>keys.delete(e.key));
+
+
+
+ 
+  // -----------------------
+  // Entities
+  // -----------------------
+  const player = {
+  x:0, y:0, w:80, h:80,
+  energy: 100,
+  glow: 0,
+  sugar: 0,
+  hitIFrames: 0,
+  boost: 0
+};
+
+
+  const rocks = [];     // {x,y,w,h,hp}
+  const bugs  = [];     // {x,y,w,h,alive, enterT, enterDur, tx,ty, bob, driftSpeed, fireCD, glow}
+  const booShots = [];  // {x,y,vy,color,isPink,dead}
+  const bugShots = [];  // {x,y,vx,vy,r,dead,t}
+  const sparkles = [];  // {x,y,vx,vy,life,ttl,size,kind}
+  const candies  = [];  // {x,y,vx,vy,spin,dead}
+
+  // -----------------------
+  // Question Popup (Multiple Choice 1–100)
+  // (kept as-is from your file, but fixed to NOT redeclare)
+  // -----------------------
+  // let quizOpen = false;
+  // let quizCount = 0;
+  // let quizDeck = [];
+  // let quizPos = 0;
+  // let quizQ = null;
+
+// -----------------------
+// Waves / pacing (FINAL)
+// 2s wait -> WAVE card -> 4 groups -> quiz -> next wave
+// Easy to edit: only change WAVE_TIERS + WAVE_SCALE
+// -----------------------
+
+// 4-group patterns per wave tier (EDIT THESE)
+const WAVE_TIERS = [
+  { from:  1, to:  5,  groups: [ 1,  2,  4,  5] },
+
+  { from:  6, to: 15,  groups: [ 3,  6,  9, 12] },
+  { from: 16, to: 25,  groups: [ 5, 10, 15, 20] },
+  { from: 26, to: 35,  groups: [ 8, 16, 24, 32] },
+  { from: 36, to: 45,  groups: [12, 20, 28, 36] },
+  { from: 46, to: 55,  groups: [17, 25, 33, 42] },
+
+  // add more tiers anytime (50+ waves supported)
+];
+
+
+// Difficulty scaling knobs (EDIT THESE)
+const WAVE_SCALE = {
+  introDelaySec: 2.0,     // after start click, before WAVE 1 card
+  waveCardSec: 4.8,      // how long “WAVE N — get ready!” shows
+
+  spawnIntervalBase: 0.60,
+  spawnIntervalMin:  0.12,
+  spawnIntervalDropPerWave: 0.012,
+
+  driftBase: 8,
+  driftGainPerWave: 0.55,
+  driftMax: 40,
+
+  fireCooldownBase: 3.6,
+  fireCooldownMin:  0.55,
+  fireCooldownDropPerWave: 0.08,
+
+  shootersBase: 1,
+  shootersGainEveryNWaves: 5,
+  shootersMax: 10,
+};
+
+const WaveState = {
+  wave: 1,
+  groupIdx: 0,        // 0..3
+  targetCount: 0,
+  spawned: 0,
+  killed: 0,
+  spawnTimer: 0,
+  phase: "intro",     // intro | card | run | quiz
+  phaseT: 0
+};
+
+let bossAlive = false;
+ 
+// -----------------------
+// DOTTY BOSS (Step 1: spawn + audio + basic stats)
+// -----------------------
+const BOSS_BASE_HP = 30;
+const BOSS_SIZE_BONUS = 0.50;     // +15% for first boss
+const BOSS_HP_GAIN = 25;          // +10 HP each boss
+const BOSS_GROWTH = 0.40;         // +10% bigger each boss
+const BOSS_BASE_SHOT_DMG = 3;     // Step 1: store it; we’ll apply later
+
+let bossSfxPlayed = false;
+
+function bossIndexForWave(w){
+  return Math.floor((w - 1) / BOSS_EVERY_N_WAVES) + 1;
+}
+
+
+
+ 
+const BOSS_EVERY_N_WAVES = 5;
+
+function isBossWave(w){
+  return (w % BOSS_EVERY_N_WAVES) === 0;
+}
+
+const BossState = {
+  active: false,
+  hp: 0,
+  maxHp: 0,
+  enterT: 0,
+  phaseT: 0
+};
+ 
+
+function tierForWave(n){
+  for(const t of WAVE_TIERS){
+    if(n >= t.from && n <= t.to) return t;
+  }
+  return WAVE_TIERS[WAVE_TIERS.length - 1];
+}
+
+function tierProgress01(w){
+  const t = tierForWave(w);                 // {from,to,groups}
+  const span = Math.max(1, (t.to - t.from)); // avoid /0
+  return clamp((w - t.from) / span, 0, 1);   // 0..1 inside this tier
+}
+ 
+
+function groupCountForWave(wave, groupIdx){
+  const tier = tierForWave(wave);
+
+  // base counts from your tier table
+  const base = tier.groups[groupIdx] ?? tier.groups[tier.groups.length-1];
+
+  // 0..1 progress within the tier (wave 6 is low, wave 15 is high)
+  const span = Math.max(1, (tier.to - tier.from));
+  const tp = clamp((wave - tier.from) / span, 0, 1);
+
+  // ramp amount per tier (EDIT THESE KNOBS)
+  let addMax = 0; // waves 1-5 basically fixed
+  if(wave >= 6  && wave <= 15) addMax = 6;
+  if(wave >= 16 && wave <= 25) addMax = 10;
+  if(wave >= 26 && wave <= 35) addMax = 14;
+  if(wave >= 36 && wave <= 45) addMax = 18;
+  if(wave >= 46 && wave <= 55) addMax = 22;
+
+  // add 0..addMax across the tier (smooth increase)
+  const add = Math.round(tp * addMax);
+
+  return base + add;
+}
+
+
+function waveSpawnInterval(wave){
+  const v = WAVE_SCALE.spawnIntervalBase - WAVE_SCALE.spawnIntervalDropPerWave*(wave-1);
+  return clamp(v, WAVE_SCALE.spawnIntervalMin, 99);
+}
+function waveDriftSpeed(wave){
+  const v = WAVE_SCALE.driftBase + WAVE_SCALE.driftGainPerWave*(wave-1);
+  return clamp(v, 0, WAVE_SCALE.driftMax);
+}
+function waveFireCooldown(wave){
+  const v = WAVE_SCALE.fireCooldownBase - WAVE_SCALE.fireCooldownDropPerWave*(wave-1);
+  return clamp(v, WAVE_SCALE.fireCooldownMin, 99);
+}
+function waveShooterCap(wave){
+  const add = Math.floor((wave-1) / WAVE_SCALE.shootersGainEveryNWaves);
+  return clamp(WAVE_SCALE.shootersBase + add, 1, WAVE_SCALE.shootersMax);
+}
+
+function startWave(n){
+  WaveState.wave = n;
+  applyWeaponLevelForWave(n);
+
+  WaveState.groupIdx = 0;
+  WaveState.phaseT = 0;
+
+  WaveState.phase = "intro";
+  beginGroup();
+}
+
+
+
+function beginGroup(){
+  WaveState.spawned = 0;
+  WaveState.killed = 0;
+  WaveState.targetCount = groupCountForWave(WaveState.wave, WaveState.groupIdx);
+  WaveState.spawnTimer = 0;
+}
+
+function advanceGroupOrQuiz(){
+  WaveState.groupIdx++;
+
+  // After 4th group → BOSS before quiz
+  if(WaveState.groupIdx >= 4){
+
+    // If boss not spawned yet, spawn it and switch to boss phase
+    if(!bossAlive){
+      WaveState.phase = "boss";
+
+      // clean arena for boss entrance
+      bugs.length = 0;
+      bugShots.length = 0;
+      booShots.length = 0;
+
+      spawnBossDotty();
+      return;
+    }
+
+    // If boss is already defeated → quiz
+    WaveState.phase = "quiz";
+    quizOpen = true;
+    nextQuiz();
+    return;
+  }
+
+  beginGroup();
+}
+
+
+
+function nextWave(){
+  startWave(WaveState.wave + 1);
+}
+
+// Call this every frame (dt in seconds)
+function updateWaveSystem(dt){
+  // --- dt safety (prevents NaN freezing your whole game) ---
+  dt = Number(dt);
+  if(!Number.isFinite(dt) || dt <= 0) dt = 1/60;       // fallback
+  if(dt > 0.05) dt = 0.05;                              // clamp huge frame jumps
+
+  // --- lazy init: if nothing started yet, start Wave 1 ---
+  if(!WaveState || !WAVE_SCALE) return;
+  if(WaveState.wave == null || WaveState.wave < 1) WaveState.wave = 1;
+  if(WaveState.phase == null) WaveState.phase = "intro";
+  if(!Number.isFinite(WaveState.phaseT)) WaveState.phaseT = 0;
+
+  // Ensure the very first group has a targetCount set
+ if(WaveState.phase === "run" && (WaveState.targetCount == null || WaveState.targetCount <= 0)){
+  beginGroup();
+}
+
+
+  WaveState.phaseT += dt;
+
+// ✅ BOSS PHASE: pause wave spawning; wait for boss to die → then quiz
+// ✅ BOSS PHASE: pause wave spawning; wait for boss to die → then quiz
+if(WaveState.phase === "boss"){
+  const boss = bugs.find(b => b.alive && b.isBoss);
+  if(!boss){
+    // 🛑 stop boss music + resume main
+    setBossMusic(false);
+
+    bossAlive = false;
+    WaveState.phase = "quiz";
+    quizOpen = true;
+    nextQuiz();
+  }
+  return; // IMPORTANT: do not run intro/card/run spawns during boss
+}
+
+
+
+
+  // --- intro: wait after start click ---
+  if(WaveState.phase === "intro"){
+    if(WaveState.phaseT >= WAVE_SCALE.introDelaySec){
+      WaveState.phase = "card";
+      WaveState.phaseT = 0;
+      // showWaveCard(WaveState.wave)
+    }
+    return;
+  }
+
+  // --- card: show “WAVE N — get ready!” ---
+  if(WaveState.phase === "card"){
+    if(WaveState.phaseT >= WAVE_SCALE.waveCardSec){
+      WaveState.phase = "run";
+      WaveState.phaseT = 0;
+      WaveState.spawnTimer = 0; // spawn immediately when run begins
+      // hideWaveCard()
+    }
+    return;
+  }
+
+  // --- quiz: pause spawns until quiz closes ---
+  if(WaveState.phase === "quiz"){
+    // When your quiz closes, set quizOpen = false.
+    // This will auto-continue to the next wave.
+    if(typeof quizOpen !== "undefined" && quizOpen === false){
+      if(typeof nextWave === "function") nextWave();
+    }
+    return;
+  }
+
+  // --- run: spawn this group, then wait until it’s cleared ---
+  if(WaveState.spawned < WaveState.targetCount){
+    WaveState.spawnTimer -= dt;
+    if(WaveState.spawnTimer <= 0){
+      spawnBug();
+      WaveState.spawned++;
+      WaveState.spawnTimer = waveSpawnInterval(WaveState.wave);
+    }
+  }
+
+ // group cleared → advance to next group or quiz
+// ✅ do NOT advance if targetCount is 0 (boss / pause states)
+if (WaveState.targetCount > 0 && WaveState.killed >= WaveState.targetCount){
+  advanceGroupOrQuiz();
+}   // ← closes the IF
+
+}   // ← closes updateWaveSystem(dt)
+
+
+
+// -----------------------
+// DOTTY placement (NO OVERLAP)
+// -----------------------
+function canPlaceTarget(tx, ty, bw, bh){
+  const minDX = bw * 0.92;
+  const minDY = bh * 0.55;
+
+  for(const b of bugs){
+    if(!b.alive) continue;
+    const ox = (b.tx ?? b.x);
+    const oy = (b.ty ?? b.y);
+    if(Math.abs(tx - ox) < minDX && Math.abs(ty - oy) < minDY) return false;
+  }
+  return true;
+}
+
+function pickTargetSlot(bw, bh){
+  const lanes = 6;
+  const laneW = W() / lanes;
+
+  //ADJUST DOTTY "COME DOWN" *0.04-->here//
+  const mobileYOffset =
+  (IS_COARSE && isLandscape()) ? -U()*0.04 : 0;
+  const baseY = clamp(U()*0.18 + mobileYOffset, 62, 130);
+  const rows  = [ baseY, baseY + bh*0.70, baseY + bh*1.30 ];
+
+
+  for(let tries=0; tries<24; tries++){
+    const lane = (Math.random()*lanes)|0;
+    const baseX = lane*laneW + laneW/2 - bw/2;
+    const row = rows[(Math.random()*rows.length)|0];
+    const ty = row + rand(0, 20);
+
+    const wiggle = laneW * 0.18;
+    const tx = baseX + rand(-wiggle, wiggle);
+
+    if(canPlaceTarget(tx, ty, bw, bh)) return { tx, ty };
+  }
+
+  for(const row of rows){
+    for(let lane=0; lane<lanes; lane++){
+      const tx = lane*laneW + laneW/2 - bw/2;
+      const ty = row;
+      if(canPlaceTarget(tx, ty, bw, bh)) return { tx, ty };
+    }
+  }
+
+  return { tx: innerWidth*0.5 - bw*0.5, ty: rows[rows.length-1] };
+}
+
+ 
+const DOTTY_SHIELD_POST = 2.0; // seconds AFTER arriving
+
+ function spawnBug(){
+  const lanes = 6;
+  const laneW = innerWidth / lanes;
+
+  const bw = clamp(U() * 0.16, 36, 72) * worldScale()
+
+  const bh = bw;
+
+
+  const slot = pickTargetSlot(bw, bh);
+  const tx = slot.tx;
+  const ty = slot.ty;
+
+  const startX = tx + rand(-laneW*0.35, laneW*0.35);
+  const startY = -bh - rand(30, 130);
+  const enterDur = rand(0.9, 1.3);
+
+  const tp = tierProgress01(WaveState.wave);
+
+let hp = 1;
+
+if(tp > 0.20) hp = 2;
+if(tp > 0.45) hp = 3;
+if(tp > 0.70) hp = 4;
+
+// later groups hit harder
+if(WaveState.groupIdx >= 2) hp += 1;
+
+hp = clamp(hp, 1, 5);
+
+ 
+   
+bugs.push({
+  x: startX,
+  y: startY,
+  w: bw,
+  h: bh,
+  alive: true,
+
+  hp: hp,
+  maxHp: hp,
+
+  enterT: 0,
+  enterDur: enterDur,
+  shieldT: enterDur + DOTTY_SHIELD_POST,
+  hasShotOnce: false,
+
+  sx: startX,
+  sy: startY,
+  tx, ty,
+
+  bob: rand(0, 10),
+  driftSpeed: waveDriftSpeed(WaveState.wave),
+  fireCD: rand(
+  waveFireCooldown(WaveState.wave) * 0.75,
+  waveFireCooldown(WaveState.wave) * 1.10
+ ) * dottyFireScale(),
+
+  glow: 0
+});
+
+
+} // ✅ THIS brace was missing
+
+
+
+
+  function easeInCubic(t){ return t*t*t; }
+  function easeInOutSine(t){ return -(Math.cos(Math.PI * t) - 1) / 2; }
+
+
+  function easeOutCubic(t){
+  return 1 - Math.pow(1 - t, 3);
+}
+
+//INCREASE 0.05 to move BOSS higher//  
+function spawnBossDotty(){
+  // base dotty size
+ const baseW = clamp(U() * 0.16, 36, 72) * worldScale();
+
+  const ty = clamp(
+  U()*0.18 + ((IS_COARSE && isLandscape()) ? -U()*0.05 : 0),
+  90, 170
+);
+  const k = bossIndexForWave(WaveState.wave); // 1,2,3...
+
+  // size growth: first boss +15%, then +10% per boss after that
+  const scale = 1 + BOSS_SIZE_BONUS + (k-1)*BOSS_GROWTH;
+  const bw = baseW * scale;
+  const bh = bw;
+
+  // enter from top center, target a bit above mid-screen
+  const tx = innerWidth/2 - bw/2;
+
+  const startX = innerWidth/2 - bw/2;   // centered
+  const startY = -bh - 40;
+
+bossAlive = true;
+
+setBossMusic(true);
+
+
+const hp = BOSS_BASE_HP + (k-1)*BOSS_HP_GAIN;
+
+  const shotDmg = BOSS_BASE_SHOT_DMG + (k-1)*1; // +1 per boss (we apply later)
+
+  const enterDur = 1.25;
+
+  bugs.push({
+    x: startX, y: startY,
+    w: bw, h: bh,
+    alive: true,
+
+    isBoss: true,         // boss flag
+    hp: hp,
+    maxHp: hp,
+    shotDmg: shotDmg,
+
+    hitsTaken: 0,
+    phase: 1, // 1 = calm, 2 = enraged
+
+
+    shakeT: 0,  //Boss shake
+    shakeMag: 0,  //Boss shake
+
+
+    enterT: 0,
+    enterDur: enterDur,                       // ✅ entry animation duration
+    shieldT: enterDur + DOTTY_SHIELD_POST,    // ✅ shield drops after arriving + post delay
+    hasShotOnce: false,
+
+    sx: startX, sy: startY,
+    tx, ty,
+
+    bob: rand(0, 10),
+    driftSpeed: waveDriftSpeed(WaveState.wave),
+    fireCD: 0.6 * dottyFireScale(),
+    glow: 0
+  });
+}
+
+
+ 
+  // -----------------------
+  // FX
+  // -----------------------
+  function addSpark(x,y, n=3, kind="gold"){
+    for(let i=0;i<n;i++){
+      sparkles.push({
+        x, y,
+        vx: rand(-120,120),
+        vy: rand(-160,60),
+        life: 0,
+        ttl: rand(0.18, 0.34),
+        size: rand(1.2, 2.6),
+        kind
+      });
+    }
+  }
+
+  function dropCandy(){
+  // unlock candy types by wave
+  let type = "pink"; // default
+  if(WaveState.wave >= 26) type = (Math.random() < 0.55) ? "blue" : "pink";
+  else if(WaveState.wave >= 16) type = (Math.random() < 0.40) ? "blue" : "pink";
+
+  candies.push({
+    x: rand(40, innerWidth-40),
+    y: -30,
+    vx: rand(-20, 20),
+    vy: rand(70, 90),
+    spin: rand(-2, 2),
+    type,          // ✅ NEW
+    dead:false
+  });
+}
+
+
+  // -----------------------
+  // Shooting rules
+  // -----------------------
+  // Normal: GOLD sparkly, one shot at a time (wait until clear)
+  // Sugar:  PINK rapid shots + pink pulsate
+
+  function canFireNormal(){
+    // one-shot-at-a-time
+    return booShots.length === 0;
+  }
+
+function fireBooShot(isPink){
+  const x0 = player.x + player.w/2;
+  const y0 = player.y + 6;
+
+ // base vertical speed + spread scale (mobile-only)
+const sm = shotScale();               // desktop = 1, phones < 1
+const vy = (isPink ? -1050 : -900) * sm;
+
+function spawn(vx){
+  booShots.push({
+    x: x0,
+    y: y0,
+    vx: vx * sm,   // horizontal spread scaled
+    vy,
+    isPink,
+    dead:false
+  });
+}
+
+// Weapon patterns
+if(booWeaponLevel === 1){
+  spawn(0);
+}
+else if(booWeaponLevel === 2){
+  spawn(0);
+  spawn(-220);
+  spawn(220);
+}
+else { // level 3
+  spawn(0);
+  spawn(-260);
+  spawn(260);
+  spawn(-140);
+  spawn(140);
+}
+
+
+
+  // subtle glow when shooting
+  player.glow = isPink ? 0.10 : 0.12;
+}
+
+function fireBugShot(b){
+  const sm = shotScale(); // ✅ define OUTSIDE the object
+
+  bugShots.push({
+    x: b.x + b.w/2,
+    y: b.y + b.h + 8,
+    vx: rand(-55, 55) * sm,   // optional but recommended
+    vy: rand(260, 340) * sm,
+    r:  rand(7, 10) * sm,
+    t: 0,
+    dead: false
+  });
+
+  b.glow = 0.18;
+}
+
+
+function fireBossSpread(b){
+  const cx = b.x + b.w/2;
+  const cy = b.y + b.h;
+
+  const count = (b.phase === 2) ? 7 : 5;
+  const mob = IS_COARSE ? 0.65 : 1;                 // mobile nerf knob
+  const speed = ((b.phase === 2) ? 360 : 300) * mob;
+  const angleSpan = Math.PI * 0.6; // wide arc
+
+  for(let i=0;i<count;i++){
+    const t = (count === 1) ? 0.5 : i / (count - 1);
+    const a = -angleSpan/2 + t * angleSpan;
+
+    bugShots.push({
+      x: cx,
+      y: cy,
+      vx: Math.sin(a) * speed,
+      vy: Math.cos(a) * speed,
+      r:  9 * (IS_COARSE ? 0.72 : 1),
+      t: 0,
+      dead:false
+    });
+  }
+
+  b.glow = 0.35;
+}
+
+
+ 
+ // -----------------------
+// Update  ✅ candy interval + candy-powered shots after 10 quizzes
+// -----------------------
+let last = 0;
+
+let stageTime = 0;
+
+let lastPlayerX = 0;
+let playerMoving = false;
+let shootResumeDelay = 0; // seconds
+
+
+// Candy interval timer
+let candyTimer = 10; // first drop happens ~10s in (tweak if you want)
+
+function update(dt){
+  if(player.energy <= 0) return;
+
+stageTime += dt;
+
+// drift ramps slowly (gentle -> faster)
+const driftBase = 10;
+const driftRamp = clamp((stageTime - 18) / 40, 0, 1);
+const driftNow  = driftBase + driftRamp * 28;
+const tp = tierProgress01(WaveState.wave);
+const tierDriftMult = 1 + tp * 1.6;  // ✅ adjust this knob (1.2 = strong ramp)
+
+ 
+
+// --------------------
+// MOVEMENT (first)
+// --------------------
+const prevX = player.x;
+
+if(pointerX !== null){
+  // target center keeps initial finger-to-player relationship
+  const targetCenter = pointerX - dragOffsetX;
+  let targetX = targetCenter - player.w/2;
+
+  // slightly tighter pad on phones
+  const pad = IS_COARSE ? 6 : 10;
+  targetX = clamp(targetX, pad, innerWidth - player.w - pad);
+
+  // ✅ smoothing only on coarse pointers (phones) — desktop unchanged
+  if(IS_COARSE){
+    player.x += (targetX - player.x) * 0.35;
+  } else {
+    player.x = targetX;
+  }
+
+} else {
+  if(keys.has("ArrowLeft")  || keys.has("a") || keys.has("A")) player.x -= 420*dt;
+  if(keys.has("ArrowRight") || keys.has("d") || keys.has("D")) player.x += 420*dt;
+  // ---- TILT MOVE (only when no finger control is active) ----
+  
+if(pointerX === null && TILT_ENABLED){
+  let g = tiltSmooth - tiltBaseline;
+
+  // 1) DEADZONE (do NOT overwrite tiltSmooth)
+  if(Math.abs(g) < tiltDead){
+    g = 0;
+  } else {
+    // subtract deadzone so motion starts immediately after threshold
+    g = (g > 0) ? (g - tiltDead) : (g + tiltDead);
+  }
+
+  // 2) clamp to max tilt
+  g = clamp(g, -tiltMaxDeg, tiltMaxDeg);
+
+  // 3) map to target velocity with a gentle curve (more sensitive for small tilts)
+  const t = (tiltMaxDeg === 0) ? 0 : (g / tiltMaxDeg);     // -1..1
+  const curved = Math.sign(t) * Math.pow(Math.abs(t), 0.65); // <1 = more sensitive near center
+  const vxTarget = curved * tiltMaxSpeed; // px/sec in WORLD units
+
+  // 4) dt-based smoothing so it feels same at 60/120hz
+  // response: bigger = snappier
+  const response = 18; 
+  const a = 1 - Math.exp(-response * dt);
+  tiltVx += (vxTarget - tiltVx) * a;
+
+  // 5) hard stop when flat (kills sensor-noise drift)
+  if(vxTarget === 0){
+    tiltVx = 0;
+  }
+
+  // 6) integrate
+  player.x += tiltVx * dt;
+
+  // 7) CLAMP in the SAME coordinate space you draw the player in
+  // If your world is PLAYFIELD coords:
+  player.x = clamp(player.x, 0, W() - player.w);
+
+  // (If you don’t have PLAYFIELD, clamp to your world width variable instead.)
+ }
+}  
+
+  
+// --------------------
+// MOVEMENT LOCK (after movement)
+// --------------------
+const dx = Math.abs(player.x - prevX);
+const moved = (dx > 0.35);
+
+if(moved){
+  playerMoving = true;
+
+  // ~0.3s penalty after ANY movement
+  shootResumeDelay = 0.30;
+
+  // hard-penalize cooldowns (prevents tap-move spray)
+  booAutoCD = Math.max(booAutoCD, 0.30);
+  booPinkCD = Math.max(booPinkCD, 0.30);
+} else {
+  playerMoving = false;
+  shootResumeDelay = Math.max(0, shootResumeDelay - dt);
+}
+
+// --------------------
+// Timers
+// --------------------
+player.glow = Math.max(0, player.glow - dt*2.2);
+player.sugar = Math.max(0, player.sugar - dt); // legacy (ok to leave)
+player.hitIFrames = Math.max(0, player.hitIFrames - dt);
+
+// 🍬 candy timer
+candyTimer -= dt;
+if(candyTimer <= 0 && candies.length === 0){
+  dropCandy();
+  candyTimer = rand(8, 12);
+}
+
+// --------------------
+// Bugs update (enter + move + shoot)
+// --------------------
+for(const b of bugs){
+  if(!b.alive) continue;
+
+  // timers
+  b.shieldT = Math.max(0, b.shieldT - dt);
+  b.glow    = Math.max(0, b.glow - dt*2.0);
+  b.shakeT  = Math.max(0, (b.shakeT || 0) - dt);
+  b.bob    += dt;
+
+  // 🔥 boss phase switch at 50% HP (runs once)
+  if(b.isBoss && b.phase === 1 && (b.hp <= (b.maxHp || b.hp) * 0.5)){
+    b.phase = 2;
+    b.glow  = 0.45;
+  }
+
+  // entry animation
+  if(b.enterT < b.enterDur){
+    b.enterT += dt;
+    const t = clamp(b.enterT / b.enterDur, 0, 1);
+
+    const curve = Math.sin(t*Math.PI) * (innerWidth*0.015) * (Math.random()<0.5?-1:1);
+    b.x = b.sx + (b.tx - b.sx)*easeOutCubic(t) + curve*(1-t);
+    b.y = b.sy + (b.ty - b.sy)*easeInOutSine(t);
+    continue;
+  }
+
+  // --------------------
+  // Movement (post-entry)
+  // --------------------
+  // shared drift speed (needed for both boss + normal)
+  let driftMult = 1;
+  if(player.boost >= 3) driftMult = 1.6;
+  b.driftSpeed = driftNow * driftMult;
+
+  if(b.isBoss){
+    // Phase 1: calm hover
+    if(b.phase === 1){
+      const bossMob = IS_COARSE ? 0.55 : 1; // mobile slower
+      b.x = b.tx + Math.sin(b.bob*0.8) * (b.driftSpeed * bossMob);
+      b.y = b.ty + Math.cos(b.bob*1.0) * (b.driftSpeed*0.25 * bossMob);
+    }
+    // Phase 2: aggressive side sweeps
+    else {
+     const accel = (IS_COARSE ? 140 : 220);
+     const vmax  = (IS_COARSE ? 260 : 420);
+     b.moveSpeed = clamp((b.moveSpeed || 0) + dt * accel, 0, vmax);
+
+
+      b.x += (b.moveDir || 1) * b.moveSpeed * dt * (IS_COARSE ? 0.75 : 1);
+      b.y = b.ty + Math.sin(b.bob*1.6) * 14;
+
+      const pad = 24;
+      if(b.x < pad){
+        b.x = pad;
+        b.moveDir = 1;
+      }
+      if(b.x + b.w > innerWidth - pad){
+        b.x = innerWidth - pad - b.w;
+        b.moveDir = -1;
+      }
+    }
+  } else {
+    // Normal Dotty drift
+    b.x = b.tx + Math.sin(b.bob*0.9) * b.driftSpeed;
+    b.y = b.ty + Math.cos(b.bob*1.1) * (b.driftSpeed*0.32);
+  }
+
+  // --------------------
+  // Firing (shared system)
+  // --------------------
+  const fireRamp = clamp((stageTime - 12) / 40, 0, 1);
+  let base = 3.4 - fireRamp*1.6;
+  if(player.boost >= 3) base *= 0.6;
+
+  // shield ended → MUST shoot once
+  if(b.shieldT === 0 && !b.hasShotOnce){
+    fireBugShot(b);
+    b.hasShotOnce = true;
+
+    b.fireCD = rand(base, base + 1.0);
+    b.fireCD = Math.max(0.6, b.fireCD);
+  }
+
+  // no firing while shielded / before first shot
+  if(b.shieldT > 0 || !b.hasShotOnce) continue;
+
+  // cadence tick (boss phase 2 fires faster)
+  // cadence tick (boss phase 2 fires faster)
+  let fireDt = dt;
+
+  if(b.isBoss && b.phase === 2){
+  fireDt *= IS_COARSE ? 1.15 : 1.6; // mobile fires slower
+}
+
+
+  b.fireCD -= fireDt;
+  if(b.fireCD <= 0){
+    fireBugShot(b);
+    b.fireCD = rand(base, base + 1.0);
+    b.fireCD = Math.max(IS_COARSE ? 0.95 : 0.6, b.fireCD);
+  }
+ }
+}
+
+// (next code continues...)
+function updateProjectiles(dt){
+
+ 
+
+    // boo shots
+    for(const s of booShots){
+      if(s.dead) continue;
+      s.y += s.vy * dt;
+      s.x += (s.vx || 0) * dt;
+
+      // sparkly trail
+      if(s.isPink){
+        addSpark(s.x + rand(-2,2), s.y + 10 + rand(-2,2), 2, "pink");
+      } else {
+        addSpark(s.x + rand(-2,2), s.y + 10 + rand(-2,2), 2, "gold");
+      }
+
+      // hit bugs
+      for(const b of bugs){
+        if(!b.alive) continue;
+        if(aabb(s.x-5, s.y-10, 10, 18, b.x, b.y, b.w, b.h)){
+
+  // SHIELD: block the hit (shot disappears + sparkles)
+  if(b.shieldT > 0){
+  s.dead = true;
+  addSpark(b.x + b.w/2, b.y + b.h/2, 24, "gold"); // BIG obvious burst
+  break;
+}
+
+// ✅ BOSS: take HP instead of dying instantly
+if(b.isBoss){
+  const dmg = s.isPink ? 2 : 1;
+  b.hp -= dmg;
+
+  // count hits (per impact, not per frame)
+  b.hitsTaken = (b.hitsTaken || 0) + 1;
+
+  // 🔥 retaliate every 3 hits
+  if(b.hitsTaken % 3 === 0){
+    fireBossSpread(b);
+  }
+
+  // hit feedback
+  b.shakeT = 0.16;
+  b.shakeMag = 7;
+
+  s.dead = true;
+  addSpark(b.x + b.w/2, b.y + b.h/2, 14, s.isPink ? "pink" : "gold");
+
+  // death check
+  if(b.hp <= 0){
+    b.alive = false;
+    WaveState.killed++;
+  }
+  break;
+}
+
+
+// NORMAL DOTTY HP (not boss)
+if(!b.isBoss && (b.hp ?? 1) > 1){
+  b.hp -= (s.isPink ? 2 : 1);
+
+  // tiny hit feedback (optional)
+  b.shakeT = 0.10;
+  b.shakeMag = 4;
+
+  s.dead = true;
+  addSpark(b.x+b.w/2, b.y+b.h/2, 10, s.isPink ? "pink":"gold");
+
+ if(b.hp <= 0){
+  b.alive = false;
+  WaveState.killed++;
+
+  dottyKills++;
+  dottyPop = 1;
+  if(dottyKills >= 1000){
+    dottyGold = true;
+    dottyKills = 0;
+    dottyPop = 1;
+  }
+
+  addSpark(b.x+b.w/2, b.y+b.h/2, 14, "gold");
+}
+break;
+}
+
+// otherwise: 1 HP dotty dies as before
+b.alive = false;
+s.dead = true;
+WaveState.killed++;
+
+dottyKills++;
+dottyPop = 1;
+if(dottyKills >= 1000){
+  dottyGold = true;
+  dottyKills = 0;
+  dottyPop = 1;
+}
+
+addSpark(b.x+b.w/2, b.y+b.h/2, 14, s.isPink ? "pink":"gold");
+break;
+
+}
+
+      }
+
+      // offscreen
+     if(s.y < -40 || s.x < -60 || s.x > innerWidth + 60) s.dead = true;
+    }
+
+    // bug shots (green blobs)
+    for(const bl of bugShots){
+      if(bl.dead) continue;
+      bl.t += dt;
+      const wob = Math.sin(bl.t*6) * 0.8;
+
+      bl.x += (bl.vx * (1+wob)) * dt;
+      bl.y += bl.vy * dt;
+
+      // hit rocks
+      for(const r of rocks){
+        if(r.hp <= 0) continue;
+        if(aabb(bl.x-bl.r, bl.y-bl.r, bl.r*2, bl.r*2, r.x, r.y, r.w, r.h)){
+          r.hp = Math.max(0, r.hp - 1);
+          bl.dead = true;
+          // a little slime puff via sparkles in green
+          addSpark(bl.x, bl.y, 8, "slime");
+          break;
+        }
+      }
+
+      // hit player (with i-frames)
+// hit player (with i-frames)
+if(!bl.dead && player.hitIFrames <= 0){
+  if(aabb(bl.x-bl.r, bl.y-bl.r, bl.r*2, bl.r*2, player.x, player.y, player.w, player.h)){
+    bl.dead = true;
+
+    // damage
+    player.energy = Math.max(0, player.energy - 10);
+    player.hitIFrames = 0.55;
+
+    // ✅ RESET BOOST STACKS ON HIT
+    player.boost = 0;
+
+    // visual feedback
+    addSpark(player.x+player.w/2, player.y+player.h/2, 12, "slime");
+  }
+}
+
+      if(bl.y > innerHeight + 80) bl.dead = true;
+    }
+
+    // cleanup arrays (real cleanup, not a no-op)
+    for(let i=booShots.length-1;i>=0;i--){
+      if(booShots[i].dead) booShots.splice(i,1);
+    }
+    for(let i=bugShots.length-1;i>=0;i--){
+      if(bugShots[i].dead) bugShots.splice(i,1);
+    }
+      for(let i=bugs.length-1;i>=0;i--){
+      if(!bugs[i].alive) bugs.splice(i,1);
+    }
+  }   // end bugShots loop
+
+
+
+ function updateCandy(dt){
+  for(const c of candies){
+    if(c.dead) continue;
+    c.x += c.vx * dt;
+    c.y += c.vy * dt;
+
+    // sparkle as it falls
+    addSpark(c.x + rand(-6,6), c.y + rand(-6,6), 1, "pink");
+
+    // catch
+   const cm = candyScale();
+   const cs = 36 * cm;
+   if(aabb(c.x - cs/2, c.y - cs/2, cs, cs, player.x, player.y, player.w, player.h)){
+    c.dead = true;
+
+      // ✅ BOOST STACKS (persist until hit)
+      // 1 candy = +1 stack, 2 candies = +2 stacks, capped at 3
+      player.boost = clamp((player.boost || 0) + 1, 0, 3);
+      playCandySfx();
+
+// ✅ blue candy upgrades weapon up to wave cap
+if(c.type === "blue"){
+  applyWeaponLevelForWave(WaveState.wave);
+}
+
+      player.energy = Math.min(100, player.energy + 30);
+
+      // turn off old timer-based sugar (so boost is the only system)
+      player.sugar = 0;
+
+      // little pulse
+      player.glow = 0.12;
+    }
+
+    if(c.y > innerHeight + 60) c.dead = true;
+  }
+
+  for(let i=candies.length-1;i>=0;i--){
+    if(candies[i].dead) candies.splice(i,1);
+  }
+}
+
+  function updateHud(dt){
+  if(dottyPop > 0){
+    dottyPop = Math.max(0, dottyPop - dt * 8); // bounce decay speed
+  }
+}
+
+  function updateParticles(dt){
+    for(const p of sparkles){
+      p.life += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vy += 280 * dt;
+    }
+    for(let i=sparkles.length-1;i>=0;i--){
+      if(sparkles[i].life >= sparkles[i].ttl) sparkles.splice(i,1);
+    }
+  }
+
+
+ /* =========================
+END CHUNK 2 / 3
+(stop here – logic & updates above)
+========================= */
+
+
+/* =========================
+CHUNK 3 / 3
+SCRIPT (PART 2) + END
+(Draw → </html>)
+========================= */
+
+// -----------------------
+// Draw
+// -----------------------
+
+
+ function drawGlow(x,y,r,alpha,color){
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x,y,r,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// 🔴 BOSS HP BAR
+function drawBossHpBar(){
+  const boss = bugs.find(b => b.alive && b.isBoss);
+  if(!boss) return;
+
+  const maxHp = Math.max(1, boss.maxHp || boss.hp || 1);
+  const hp    = Math.max(0, Math.min(maxHp, boss.hp ?? maxHp));
+  const p     = hp / maxHp;
+
+  const w = clamp(innerWidth * 0.62, 260, 560);
+  const h = 14;
+  const x = innerWidth/2 - w/2;
+  const PAD = 12;
+  const y = SAFE.top + PAD;
+
+
+  ctx.save();
+
+  // label
+  ctx.font = "900 14px system-ui, -apple-system, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.textAlign = "center";
+  ctx.fillText("Dotty Boss", innerWidth/2, y + 0);
+
+  // bg
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.fillRect(x, y + 10, w, h);
+
+  // fill
+  ctx.fillStyle = "rgba(255,120,220,0.92)";
+  ctx.fillRect(x, y + 10, w * p, h);
+
+  // outline
+  ctx.strokeStyle = "rgba(255,255,255,0.22)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y + 10, w, h);
+
+  ctx.restore();
+}
+
+
+
+
+// -----------------------
+// WAVE BANNER (ROLL ACROSS) ✅ SIMPLE + SAFE
+// Shows ONLY during WaveState.phase === "card"
+// -----------------------
+function drawWaveBanner(){
+  if(!started) return;
+  if(!WaveState || WaveState.phase !== "card") return;
+
+  // total duration of the card phase
+  const dur = Math.max(0.001, (WAVE_SCALE && WAVE_SCALE.waveCardSec) ? WAVE_SCALE.waveCardSec : 4.8);
+
+  // timing: slow entrance + pause + fast exit
+  const pauseSec = 1.0;                         // ← center pause length
+  const moveSec  = Math.max(0.001, dur - pauseSec);
+  const enterSec = moveSec * 0.72;              // ← slower entrance
+  const exitSec  = Math.max(0.001, moveSec - enterSec); // ← faster exit
+
+  const t = clamp(WaveState.phaseT, 0, dur);
+
+  // p = 0..1 travel progress
+  let p = 0;
+
+  if(t < enterSec){
+    const u = clamp(t / enterSec, 0, 1);
+    p = 0.5 * easeOutCubic(u);                  // arrive into center
+  } else if(t < enterSec + pauseSec){
+    p = 0.5;                                    // hold in center
+  } else {
+    const u = clamp((t - enterSec - pauseSec) / exitSec, 0, 1);
+    p = 0.5 + 0.5 * easeInCubic(u);             // exit quickly
+  }
+
+  const text = "WAVE " + WaveState.wave;
+  const sub  = "ドッティが くるよ！";
+
+  ctx.save();
+
+  const bigSize = clamp(innerWidth * 0.10, 52, 110);
+  const subSize = clamp(innerWidth * 0.035, 16, 28);
+
+  ctx.font = "900 " + bigSize + "px system-ui, -apple-system, sans-serif";
+  const tw = ctx.measureText(text).width;
+
+  ctx.font = "900 " + subSize + "px system-ui, -apple-system, sans-serif";
+  const sw = ctx.measureText(sub).width;
+
+  const margin = Math.max(40, innerWidth * 0.08);
+  const travel = innerWidth + margin*2 + Math.max(tw, sw);
+  const x = innerWidth + margin - p * travel;
+  const y = innerHeight * 0.34;
+
+  ctx.globalCompositeOperation = "lighter";
+  drawGlow(x + tw/2, y - bigSize*0.35, bigSize*0.95, 0.22, "rgba(255,120,220,0.55)");
+  drawGlow(x + tw/2, y - bigSize*0.35, bigSize*0.85, 0.20, "rgba(255,214,102,0.55)");
+  ctx.globalCompositeOperation = "source-over";
+
+  ctx.font = "900 " + bigSize + "px system-ui, -apple-system, sans-serif";
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = "rgba(0,0,0,0.55)";
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = "rgba(255,255,255,0.96)";
+  ctx.fillText(text, x, y);
+
+  ctx.font = "900 " + subSize + "px system-ui, -apple-system, sans-serif";
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "rgba(0,0,0,0.55)";
+  ctx.strokeText(sub, x + (tw - sw)/2, y + subSize*1.2);
+  ctx.fillStyle = "rgba(185,255,207,0.92)";
+  ctx.fillText(sub, x + (tw - sw)/2, y + subSize*1.2);
+
+  ctx.restore();
+}
+
+// -----------------------
+// HUD / OVERLAYS (keep in this chunk)
+// -----------------------
+
+function drawPauseButton(){
+  // smaller
+  PAUSE_BTN.w = 36;
+  PAUSE_BTN.h = 36;
+  const PAD = 12;
+  PAUSE_BTN.x = innerWidth - SAFE.right - HUD_PAD - PAUSE_BTN.w;
+  PAUSE_BTN.y = SAFE.top + HUD_PAD;
+
+  var cx = PAUSE_BTN.x + PAUSE_BTN.w/2;
+  var cy = PAUSE_BTN.y + PAUSE_BTN.h/2;
+  var r  = PAUSE_BTN.w/2;
+
+  ctx.save();
+
+  // subtle blue-purple glow
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = "rgba(120,120,255,0.55)";
+
+  var g = ctx.createRadialGradient(cx-5, cy-5, 6, cx, cy, r);
+  g.addColorStop(0, "#8fd3ff");
+  g.addColorStop(1, "#7a5cff");
+
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.fill();
+
+  // pause bars
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "rgba(255,255,255,0.95)";
+  var barW = 3, barH = 14, gap = 3;
+  ctx.fillRect(cx - gap - barW, cy - barH/2, barW, barH);
+  ctx.fillRect(cx + gap,        cy - barH/2, barW, barH);
+
+  ctx.restore();
+}
+
+function drawPauseOverlay(){
+  ctx.save();
+
+  // Dim + soft vignette
+  ctx.fillStyle = "rgba(0,0,0,0.62)";
+  ctx.fillRect(0,0,innerWidth,innerHeight);
+  const vg = ctx.createRadialGradient(
+    innerWidth/2, innerHeight/2, 50,
+    innerWidth/2, innerHeight/2,
+    Math.max(innerWidth,innerHeight)*0.75
+  );
+  vg.addColorStop(0, "rgba(0,0,0,0.00)");
+  vg.addColorStop(1, "rgba(0,0,0,0.55)");
+  ctx.fillStyle = vg;
+  ctx.fillRect(0,0,innerWidth,innerHeight);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  function glowText(text, x, y, size, weight, color, glowColor, blur, shadowA){
+    ctx.font = `${weight} ${size}px system-ui, -apple-system, sans-serif`;
+
+    ctx.shadowColor = `rgba(0,0,0,${shadowA})`;
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 6;
+    ctx.fillStyle = "rgba(0,0,0,0.65)";
+    ctx.fillText(text, x, y+2);
+
+    ctx.shadowColor = glowColor;
+    ctx.shadowBlur = blur;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+  }
+
+  const cx = innerWidth/2;
+
+  glowText("PAUSED", cx, innerHeight*0.24, 40, 900,
+           "rgba(255, 120, 200, 0.98)", "rgba(255, 120, 200, 0.85)", 22, 0.85);
+
+  const y0 = innerHeight*0.40;
+  const lineGap = 68;
+  const jpOffset = 26;
+
+  glowText(
+    "The game is paused because the player had a toilet emergency!!!",
+    cx, y0, 18, 900,
+    "rgba(255, 140, 220, 0.98)", "rgba(255, 140, 220, 0.80)", 18, 0.85
+  );
+  glowText(
+    "きんきゅう! トイレ で いちじていし ちゅう！！！",
+    cx, y0 + jpOffset, 18, 900,
+    "rgba(255, 230, 120, 0.98)", "rgba(255, 230, 120, 0.75)", 18, 0.90
+  );
+
+  const y1 = y0 + lineGap;
+  glowText(
+    "Click anywhere to return to the game. I hope you washed your hands.",
+    cx, y1, 18, 900,
+    "rgba(255, 140, 220, 0.98)", "rgba(255, 140, 220, 0.80)", 18, 0.85
+  );
+  glowText(
+    "どこでも クリックして もどってね。て、あらった？",
+    cx, y1 + jpOffset, 18, 900,
+    "rgba(255, 230, 120, 0.98)", "rgba(255, 230, 120, 0.75)", 18, 0.90
+  );
+
+  glowText(
+    "Tap / Click anywhere",
+    cx, innerHeight*0.78, 16, 800,
+    "rgba(255,255,255,0.92)", "rgba(255,255,255,0.55)", 14, 0.85
+  );
+  glowText(
+    "どこでも タップ！",
+    cx, innerHeight*0.78 + 22, 16, 900,
+    "rgba(255, 230, 120, 0.95)", "rgba(255, 230, 120, 0.70)", 14, 0.90
+  );
+
+  ctx.restore();
+}
+
+function drawDottyKills(){
+  if(!started) return;
+
+  const gap = 10;
+  const rBase = 16;
+
+  const cx = PAUSE_BTN.x + PAUSE_BTN.w/2;
+  const cy = PAUSE_BTN.y + PAUSE_BTN.h + gap + rBase;
+
+  const k = dottyPop; // 0..1
+  const scale = 1 + 0.18 * Math.sin(k * Math.PI);
+
+  const fillNum = dottyGold ? "rgba(255, 210, 80, 1)" : "rgba(255, 80, 90, 1)";
+  const ringCol = dottyGold ? "rgba(255, 220, 120, 0.80)" : "rgba(255,255,255,0.70)";
+  const circleFill = dottyGold ? "rgba(255, 220, 120, 0.20)" : "rgba(255,255,255,0.22)";
+  const circleGlow = dottyGold ? "rgba(255, 200, 80, 0.70)" : "rgba(255,255,255,0.55)";
+
+  ctx.save();
+  ctx.shadowBlur = 14;
+  ctx.shadowColor = circleGlow;
+  ctx.fillStyle = circleFill;
+  ctx.beginPath();
+  ctx.arc(cx, cy, rBase, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = ringCol;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, rBase - 1, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(scale, scale);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "900 18px system-ui, -apple-system, sans-serif";
+
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "rgba(0,0,0,0.90)";
+  ctx.strokeText(String(dottyKills), 0, 0.5);
+
+  ctx.fillStyle = fillNum;
+  ctx.fillText(String(dottyKills), 0, 0.5);
+
+  ctx.restore();
+}
+
+// -----------------------
+// Draw (your original content, fixed braces/order)
+// -----------------------
+function draw(){
+  // background
+  if(IMG.bg) drawCover(IMG.bg);
+  else {
+    ctx.fillStyle = "#050014";
+    ctx.fillRect(0,0,innerWidth,innerHeight);
+  }
+
+  // rocks
+  for(const r of rocks){
+    if(r.hp <= 0) continue;
+    const idx = clamp(4 - Math.ceil(r.hp/5), 0, 3);
+    const img = IMG.rocks?.[idx];
+    if(img) ctx.drawImage(img, r.x, r.y, r.w, r.h);
+  }
+
+  // bugs (glow while shooting)
+  for(const b of bugs){
+    if(!b.alive) continue;
+
+    let sx = 0, sy = 0;
+    if(b.shakeT > 0){
+      const m = b.shakeMag || 5;
+      sx = rand(-m, m);
+      sy = rand(-m, m);
+    }
+
+    const bx = b.x + sx;
+    const by = b.y + sy;
+
+    if(b.glow > 0){
+      drawGlow(
+        bx + b.w/2, by + b.h/2,
+        b.w * 0.55,
+        (b.glow / 0.18) * 0.22,
+        "rgba(120,255,200,0.55)"
+      );
+    }
+
+    if(IMG.bug) ctx.drawImage(IMG.bug, bx, by, b.w, b.h);
+
+    if(b.shieldT > 0){
+      const t = performance.now()/1000;
+      const pulse = 0.5 + 0.5 * Math.sin(t * 6 + (b.bob || 0));
+      const cx = bx + b.w/2;
+      const cy = by + b.h/2;
+      const r  = b.w * (0.42 + 0.03 * pulse);
+
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+
+      ctx.globalAlpha = 0.26 + 0.10 * pulse;
+      ctx.fillStyle = "rgba(255, 209, 102, 1)";
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.globalAlpha = 0.10 + 0.06 * pulse;
+      ctx.shadowBlur = 22 + 10 * pulse;
+      ctx.shadowColor = "rgba(255, 209, 102, 1)";
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * 1.10, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+  }
+
+  drawBossHpBar();
+
+  // bug shots
+  for(const bl of bugShots){
+    if(bl.dead) continue;
+
+    drawGlow(bl.x, bl.y, bl.r * 2.8, 0.18, "rgba(70,255,140,0.65)");
+    drawGlow(bl.x, bl.y, bl.r * 1.6, 0.22, "rgba(140,255,190,0.75)");
+
+    ctx.fillStyle = "rgba(90,255,150,0.95)";
+    ctx.beginPath();
+    ctx.arc(bl.x, bl.y, bl.r, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // boo shots
+  for(const s of booShots){
+    if(s.dead) continue;
+
+    const sm = shotScale();
+    const glowR = 16 * sm;
+    const w = 4 * sm;
+    const h = 14 * sm;
+
+    if(s.isPink){
+      drawGlow(s.x, s.y, glowR, 0.22, "rgba(255,120,220,0.55)");
+      ctx.fillStyle = "#ffd1ef";
+    } else {
+      drawGlow(s.x, s.y, glowR, 0.18, "rgba(255,214,102,0.55)");
+      ctx.fillStyle = "#fff2c7";
+    }
+    ctx.fillRect(s.x - (w/2), s.y - h, w, h);
+  }
+
+  // candy
+  for(const c of candies){
+    if(c.dead) continue;
+    if(IMG.candy){
+      if(c.type === "blue"){
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        drawGlow(c.x, c.y, 20, 0.22, "rgba(120,200,255,0.65)");
+        ctx.restore();
+      }
+      const cm = candyScale();
+      const cs = 36 * cm;
+      ctx.drawImage(IMG.candy, c.x - cs/2, c.y - cs/2, cs, cs);
+    }
+  }
+
+  // sparkles
+  if(sparkles.length){
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for(const p of sparkles){
+      const t = p.life / p.ttl;
+      const a = 1 - t;
+      ctx.globalAlpha = a;
+
+      if(p.kind === "pink") ctx.fillStyle = "rgba(255,170,235,0.9)";
+      else if(p.kind === "slime") ctx.fillStyle = "rgba(120,255,160,0.7)";
+      else ctx.fillStyle = "rgba(255,230,140,0.85)";
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  // player glow
+  const px = player.x + player.w/2;
+  const py = player.y + player.h/2;
+
+  if(player.sugar > 0){
+    const pulse = 0.5 + 0.5*Math.sin((performance.now()/1000)*6);
+    drawGlow(px, py, player.w*0.50, 0.10 + pulse*0.08, "rgba(255,120,220,0.55)");
+  } else if(player.glow > 0){
+    drawGlow(px, py, player.w*0.45, 0.12, "rgba(255,214,102,0.55)");
+  }
+
+  const isShootingPose = (booFireTimer > 0 && booFireTimer < 0.10);
+  const pimg = isShootingPose ? IMG.booShoot : IMG.booIdle;
+
+  if(player.hitIFrames > 0){
+    ctx.globalAlpha = 0.78;
+  }
+
+  if(pimg) ctx.drawImage(pimg, player.x, player.y, player.w, player.h);
+  else {
+    ctx.fillStyle = "#ff7eb9";
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+  }
+  ctx.globalAlpha = 1;
+
+  // HUD: energy meter + stage label
+  const PAD = 12;
+  const barX = 16;
+  const barY = SAFE.top + PAD;
+  const barW = 150;
+  const barH = 10;
+
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+  ctx.fillRect(barX, barY, barW, barH);
+
+  const fillW = barW * (player.energy / 100);
+  const color = (player.energy > 50) ? "rgba(255,214,102,0.95)"
+              : (player.energy > 20) ? "rgba(255,180,120,0.95)"
+              : "rgba(255,120,160,0.95)";
+  ctx.fillStyle = color;
+  ctx.fillRect(barX, barY, fillW, barH);
+
+  ctx.font = "700 13px system-ui, -apple-system, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.fillText("Booha", barX, barY + 28);
+
+  // ---- HUD + overlays ----
+  drawPauseButton();
+  drawDottyKills();
+
+  drawWaveBanner();
+  drawQuizOverlay();
+
+  if(started){
+    if(paused){
+      drawPauseOverlay();
+    }
+  }
+
+  if(IS_COARSE && mobileControls){
+    mobileControls.style.pointerEvents = quizOpen ? "none" : "auto";
+  }
+
+  // Game Over overlay
+  if(player.energy <= 0 && !endPlaying){
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.55)";
+    ctx.fillRect(0,0,innerWidth,innerHeight);
+
+    ctx.fillStyle = "rgba(255,255,255,0.94)";
+    ctx.font = "900 38px system-ui, -apple-system, sans-serif";
+    const msg = "GAME OVER";
+    const mw = ctx.measureText(msg).width;
+    ctx.fillText(msg, innerWidth/2 - mw/2, innerHeight/2 - 10);
+
+    ctx.font = "700 16px system-ui, -apple-system, sans-serif";
+    const msg2 = "Press R to Restart";
+    const mw2 = ctx.measureText(msg2).width;
+    ctx.fillText(msg2, innerWidth/2 - mw2/2, innerHeight/2 + 26);
+    ctx.restore();
+  }
+} // ✅ end draw()
+
+ 
+ 
+ 
+  // -----------------------
+// Quiz helpers (Multiple Choice runtime) ✅ feedback + retry + 1st-try reward
+// -----------------------
+let quizTried = [false,false,false,false];   // wrong attempts (red)
+let quizSolved = false;                      // lock after correct
+let quizFirstTry = true;                     // reward only if true
+let quizMsg = "";                            // JP message
+
+
+// =========================
+// PAUSE hit test helper
+// =========================
+function hitPauseBtn(mx, my){
+  PAUSE_BTN.w = 36;
+  PAUSE_BTN.h = 36;
+
+  PAUSE_BTN.x = innerWidth - SAFE.right - HUD_PAD - PAUSE_BTN.w;
+  PAUSE_BTN.y = SAFE.top + HUD_PAD;
+
+  return (
+    mx >= PAUSE_BTN.x &&
+    mx <= PAUSE_BTN.x + PAUSE_BTN.w &&
+    my >= PAUSE_BTN.y &&
+    my <= PAUSE_BTN.y + PAUSE_BTN.h
+  );
+}
+
+ 
+function restoreRocksAndEnergy(){
+  // Energy restore
+  player.energy = Math.min(100, player.energy + 25);
+
+  // Rocks restore (bring back destroyed rocks + heal)
+  for(const r of rocks){
+    r.hp = Math.min(20, r.hp + 10);
+  }
+}
+
+function closeQuiz(){
+  // track quiz progress / difficulty
+  quizCount++;
+
+  // close quiz (this unfreezes the game loop)
+  quizOpen = false;
+
+  // reset quiz UI/state
+  quizSolved = false;
+  quizFirstTry = true;
+  quizTried = [false,false,false,false];
+  quizMsg = "";
+
+  // prepare next question (but do NOT open it)
+  nextQuiz();
+}
+
+
+function answerQuiz(index){
+  if(!quizOpen || !quizQ) return;
+
+  // already solved: ignore extra taps
+  if(quizSolved) return;
+
+  // already tried wrong: ignore repeat taps on same wrong button
+  if(quizTried[index]) return;
+
+  const correct = (index === quizQ.correctIndex);
+
+  if(!correct){
+    // ❌ wrong: mark red, allow retry
+    quizTried[index] = true;
+    quizFirstTry = false;
+    quizMsg = "ちがう！もういちど！";
+    return;
+  }
+
+  // ✅ correct: mark green, reward only if first try
+  quizSolved = true;
+
+  if(quizFirstTry){
+    restoreRocksAndEnergy();
+    quizMsg = "すごい！エネルギーとブロックが回復した！";
+  } else {
+    quizMsg = "正解！";
+  }
+
+  // close after a short beat so they SEE green
+  setTimeout(()=>{
+    if(quizOpen) closeQuiz();
+  }, 650);
+}
+
+
+  // -----------------------
+  // Key handling (single, non-duplicated)
+  // - R restarts on game over
+  // - 1–4 answers during quiz
+  // -----------------------
+  addEventListener("keydown", (e)=>{
+    // Restart (game over)
+    if(player.energy <= 0){
+      if(e.key === "r" || e.key === "R"){
+        e.preventDefault();
+        booFireTimer = 0;
+        resetGame();
+      }
+      return;
+    }
+
+    // Quiz answers
+    if(quizOpen){
+      if(e.key === "1" || e.key === "2" || e.key === "3" || e.key === "4"){
+        e.preventDefault();
+        answerQuiz((e.key|0) - 1);
+        return;
+      }
+      // optional: Escape closes quiz (counts as a completed question)
+      if(e.key === "Escape"){
+        e.preventDefault();
+        closeQuiz();
+        return;
+      }
+    }
+  }, { passive:false });
+
+// -----------------------
+// Main loop
+// -----------------------
+
+////TRYING TO FIX THE BOOS
+
+/* TEMP CUT */
+   
+ 
+function tick(ts){
+  // ✅ Schedule next frame FIRST so the loop cannot die
+  requestAnimationFrame(tick);
+
+if(endPlaying){
+  draw(); // optional: keeps last frame visible under video
+  return;
+}
+ 
+  try{
+    const t = ts / 1000;
+    const dt = Math.min(0.033, (t - last) || 0);
+    last = t;
+
+    // ONLY run game logic when actually playing
+   if(started && player.energy > 0 && !quizOpen && !paused){
+      update(dt);
+
+      updateFiring(dt);
+      updateProjectiles(dt);
+      updateCandy(dt);
+      updateParticles(dt);
+      updateWaveSystem(dt);
+      updateHud(dt);
+    }
+
+// END MODE: once Booha dies, switch to video and stop drawing the game
+if(started && player.energy <= 0){
+  triggerEndVideo();
+  return; // ✅ stop draw() so canvas isn't repainting under/over the video
+}
+
+draw();
+ 
+
+  } catch(err){
+    // ✅ Don’t kill the loop — just show the error and keep going
+    console.warn(err);
+
+    // Optional: show a small on-screen error badge
+    // (keeps it visible even if Safari console is flaky)
+    try{
+      const msg = (err && err.stack) ? err.stack : String(err);
+      let box = document.getElementById("boohaErrBox");
+      if(!box){
+        box = document.createElement("div");
+        box.id = "boohaErrBox";
+        box.style.cssText =
+          "position:fixed;left:12px;right:12px;bottom:12px;z-index:999999;" +
+          "background:#000c;color:#fff;padding:10px;border-radius:12px;" +
+          "font:12px/1.35 system-ui;white-space:pre-wrap";
+        document.body.appendChild(box);
+      }
+      box.textContent = "ERROR (loop survived):\n" + msg;
+    } catch(_) {}
+  }
+}
+
+/////TRYING TO FIX THE BOSS  
+
+// -----------------------
+// Reset Game (RESTORED – required by boot())
+// -----------------------
+function resetGame(){
+  resize();
+
+  const bottomPad = 14;
+
+  // -----------------------
+  // player sizing (Booha)
+  // -----------------------
+  let booW = clamp(U() * 0.22, 46, 86) * worldScale();
+
+  // ✅ iOS-only: prevent Booha from exceeding Dotty-based ceiling
+  // Booha max is 86, Dotty max is 72 → ratio = 86/72
+  booW = capToDottyOnIOS(booW, 86/72);
+
+  player.w = booW;
+  player.h = player.w;
+
+  // positioning (keep your existing W/H usage if you want)
+  player.x = W()/2 - player.w/2;
+  player.y = H() - player.h - bottomPad;
+
+  player.energy = 100;
+  player.glow = 0;
+  player.sugar = 0;
+  player.hitIFrames = 0;
+
+  // -----------------------
+  // rocks
+  // -----------------------
+  rocks.length = 0;
+  const count = 4;
+
+  let rockW = clamp(U() * 0.34, 84, 150) * worldScale();
+
+  // ✅ iOS-only: prevent rocks from exceeding Dotty-based ceiling
+  // Rock max is 150, Dotty max is 72 → ratio = 150/72
+  rockW = capToDottyOnIOS(rockW, 150/72);
+
+  const rockH = rockW * 0.72;
+
+  const gap = Math.max(10, (W() - count*rockW) / (count+1));
+
+  // push rocks lower (closer to Booha, arcade-style)
+  let rockPad = (IS_COARSE && isLandscape())
+    ? (clamp(U()*0.10, 10, 32) * worldScale())
+    : (clamp(U()*0.18, 26, 60) * worldScale());
+
+  // ✅ keep pad proportional to the iOS-capped rock size too
+  rockPad = capToDottyOnIOS(rockPad, 150/72);
+
+  const ry = player.y - rockH - rockPad;
+
+  for(let i=0;i<count;i++){
+    rocks.push({
+      x: gap + i*(rockW+gap),
+      y: ry,
+      w: rockW,
+      h: rockH,
+      hp: 20
+    });
+  }
+
+  bugs.length = 0;
+  booShots.length = 0;
+  bugShots.length = 0;
+  sparkles.length = 0;
+  candies.length = 0;
+
+  if(!quizDeck.length) buildQuizDeck();
+  nextQuiz();
+
+  stageTime = 0;
+}
+
+
+
+function startMainBGM(){
+  try{
+    if(!bgm){
+      bgm = new Audio("invaders-bgm.mp3");
+      bgm.loop = true;
+      bgm.volume = 0.6;
+    }
+    bgm.play().catch(()=>{});
+  } catch(_) {}
+}
+
+function startBGM(){
+  startMainBGM();
+}
+
+
+//START BOSS BGM//  
+function setBossMusic(on){
+  try{
+    if(on){
+      // stop main BGM
+      if(bgm){
+        bgm.pause();
+        bgm.currentTime = 0;
+      }
+
+      // create or reset boss BGM
+      if(!bossBgm){
+        bossBgm = new Audio("dotty-boss.mp3");
+        bossBgm.loop = true;
+        bossBgm.volume = 0.9;
+      } else {
+        bossBgm.pause();
+        bossBgm.currentTime = 0;
+      }
+
+      // only play if not paused
+      if(!paused){
+        bossBgm.play().catch(()=>{});
+      }
+
+    } else {
+      // stop boss BGM
+      if(bossBgm){
+        bossBgm.pause();
+        bossBgm.currentTime = 0;
+      }
+
+      // resume main BGM only if not paused
+      if(bgm && !paused){
+        bgm.play().catch(()=>{});
+      }
+    }
+  } catch(_) {}
+}
+
+function primeEndVideo(){
+  if(!endVideo) return;
+  try{
+    endVideo.pause();
+    endVideo.currentTime = 0;
+    endVideo.muted = false;
+
+    const p = endVideo.play();
+    if(p && p.catch) p.catch(()=>{});
+
+    // pause quickly (still counts as user-gesture initiated play)
+    setTimeout(()=>{
+      try{
+        endVideo.pause();
+        endVideo.currentTime = 0;
+      } catch(_){}
+    }, 60);
+  } catch(_){}
+}
+
+function primeCandySFX(){
+  try{
+    if(!candySfx){
+      candySfx = new Audio("candy-get.mp3");
+      candySfx.volume = 1;
+    }
+    candySfx.muted = true;
+    const p = candySfx.play();
+    if(p && p.catch) p.catch(()=>{});
+    setTimeout(()=>{
+      candySfx.pause();
+      candySfx.currentTime = 0;
+      candySfx.muted = false;
+    }, 50);
+  } catch(_) {}
+}
+
+
+
+  
+function primeBossBGM(){
+  try{
+    if(!bossBgm){
+      bossBgm = new Audio("dotty-boss.mp3");
+      bossBgm.loop = true;
+      bossBgm.volume = 0.9;
+    }
+
+    // iOS unlock: muted play → pause
+    bossBgm.pause();
+    bossBgm.currentTime = 0;
+    bossBgm.muted = true;
+
+    const p = bossBgm.play();
+    if(p && p.catch) p.catch(()=>{});
+
+    setTimeout(()=>{
+      try{
+        bossBgm.pause();
+        bossBgm.currentTime = 0;
+        bossBgm.muted = false;
+      } catch(_){}
+    }, 60);
+  } catch(_){}
+}
+ 
+// -----------------------
+// Boot
+// -----------------------
+(async function boot(){
+  resize();
+
+disableDoubleTapZoomScoped(canvas);
+//disableDoubleTapZoomScoped(document.documentElement);
+
+
+  
+  try{
+    const [bg, b1, b2, bug, candy, r1,r2,r3,r4] = await Promise.all([
+      loadImg(ASSETS.bg),
+      loadImg(ASSETS.booIdle),
+      loadImg(ASSETS.booShoot),
+      loadImg(ASSETS.bug),
+      loadImg(ASSETS.candy),
+      loadImg(ASSETS.rocks[0]),
+      loadImg(ASSETS.rocks[1]),
+      loadImg(ASSETS.rocks[2]),
+      loadImg(ASSETS.rocks[3])
+    ]);
+
+    IMG.bg = bg;
+    IMG.booIdle = b1;
+    IMG.booShoot = b2;
+    IMG.bug = bug;
+    IMG.candy = candy;
+    IMG.rocks = [r1,r2,r3,r4];
+  } catch(err){
+    console.warn(err);
+  }
+
+  // prepare clean state ONCE (do NOT start waves here)
+  resetGame();
+
+
+ // ✅ ADD THIS LINE HERE (last thing in boot)
+if(typeof handleTiltEvent === "function"){
+  window.addEventListener("deviceorientation", handleTiltEvent, true);
+}
+
+
+
+  // START button (wire once)
+const startBtn = document.getElementById("startBtn");
+if(startBtn){
+  startBtn.addEventListener("click", ()=>{
+    started = true;              // ✅ set FIRST
+
+   if(IS_COARSE){
+  document.getElementById("mobileHoldControls").style.display = "block";
+} // ✅ close IS_COARSE
+
+
+  updateOrientationGate();     // ✅ computes GAME_SCALE once
+  LOCKED_SCALE = GAME_SCALE;   // ✅ lock once
+
+  quizOpen = false;
+
+  lastPlayerX = player.x;
+  playerMoving = false;
+  shootResumeDelay = 0;
+
+document.getElementById("startOverlay").style.display = "none";
+
+
+primeCandySFX();    // ✅ move here (earliest possible)
+primeEndVideo();
+primeBossBGM();
+
+resetGame();
+showTiltPromptAndThenStartWave1();
+startBGM();
+
+});
+
+} // ← THIS one
+
+endVideo = document.getElementById("endVideo");
+
+if(endVideo){
+  endVideo.addEventListener("ended", ()=>{
+    // hide video
+    endVideo.pause();
+    endVideo.currentTime = 0;
+    endVideo.style.opacity = "0";
+    endVideo.style.pointerEvents = "none";
+
+    // reset flags
+    endPlaying = false;
+    endFadeStarted = false;
+
+  started = false;
+  showStartOverlay();
+  resetGame();
+
+  });
+}
+
+   // start the game loop
+  requestAnimationFrame(tick);
+})();              // closes boot()
+
+
+
+
+</script>
+</body>
+</html>
