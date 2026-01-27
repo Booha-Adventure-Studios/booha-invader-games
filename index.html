@@ -65,7 +65,8 @@ body::before{
   100%{transform:translate(-2%,-1%) rotate(0deg)}
 }
 
-/* page layout: header at very top, footer at very bottom */
+/* page layout: header at very top, footer a
+  t very bottom */
 .wrap{
   min-height:100vh;
   display:flex;
@@ -93,38 +94,39 @@ body::before{
   line-height:1.05;
   margin:0;
 
-  /* MORE OBVIOUS RGB glow (animated shadows, not white blend) */
+  /* vivid RGB glow (not white) */
   text-shadow:
-    0 0 10px rgba(255, 80, 80, .55),
-    0 0 18px rgba(80, 255, 160, .45),
-    0 0 26px rgba(80, 150, 255, .45),
-    0 0 46px rgba(80, 255, 160, .18);
+    0 0 10px rgba(255, 60, 60, .70),
+    0 0 18px rgba(60, 255, 160, .60),
+    0 0 28px rgba(60, 140, 255, .60),
+    0 0 62px rgba(60, 255, 160, .24);
 
-  animation:rgbShadow 7.8s ease-in-out infinite;
+  animation: rgbShadow 10.5s ease-in-out infinite;
+  will-change: text-shadow;
 }
 
-.subtitle0),
-      0 0 52px rgba(80, 255, 160, .20);
+@keyframes rgbShadow{
+  0%,100%{
+    text-shadow:
+      0 0 10px rgba(255, 60, 60, .70),
+      0 0 18px rgba(60, 255, 160, .60),
+      0 0 28px rgba(60, 140, 255, .60),
+      0 0 62px rgba(60, 255, 160, .24);
   }
   33%{
     text-shadow:
-      0 0 10px rgba(255, 80, 220, .60),
-      0 0 18px rgba(80, 220, 255, .55),
-      0 0 26px rgba(255, 220, 80, .50),
-      0 0 52px rgba(80, 220, 255, .20);
+      0 0 10px rgba(255, 60, 220, .72),
+      0 0 18px rgba(60, 220, 255, .64),
+      0 0 28px rgba(255, 220, 60, .58),
+      0 0 62px rgba(60, 220, 255, .24);
   }
   66%{
     text-shadow:
-      0 0 10px rgba(255, 140, 60, .62),
-      0 0 18px rgba(120, 255, 90, .52),
-      0 0 26px rgba(180, 90, 255, .52),
-      0 0 52px rgba(120, 255, 90, .20);
+      0 0 10px rgba(255, 150, 60, .74),
+      0 0 18px rgba(120, 255, 80, .62),
+      0 0 28px rgba(190, 80, 255, .62),
+      0 0 62px rgba(120, 255, 80, .24);
   }
-}
-  50%{filter:hue-rotate(180deg)}
-  100%{filter:hue-rotate(360deg)}
-}
-  100%{filter:hue-rotate(360deg)}
 }
 
 .subtitle{
@@ -134,6 +136,8 @@ body::before{
   margin-top:6px;
 }
 
+
+  
 .main{
   flex:1;
   display:flex;
@@ -177,23 +181,39 @@ a.dotty img{
 
   /* stronger haunting glow */
   filter:
-    drop-shadow(0 0 14px rgba(140,255,210,.55))
-    drop-shadow(0 0 32px rgba(90,220,170,.45))
-    drop-shadow(0 0 70px rgba(60,180,130,.30));
+    drop-shadow(0 0 14px var(--gA))
+    drop-shadow(0 0 34px var(--gB))
+    drop-shadow(0 0 78px var(--gC));
 }
 
+a.dotty img{ animation:logoDrift 6.8s ease-in-out infinite; }
+
+@keyframes logoDrift{
+  0%,100%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(0,-4px) scale(1.01)}
+}
+
+  
 /* outer aura behind logo */
 a.dotty::before{
   content:"";
   position:absolute;
-  inset:-22%;
+  inset:-36%;
   border-radius:999px;
+
   background:
-    radial-gradient(circle at 50% 52%, rgba(140,255,210,.38), transparent 60%);
-  opacity:.7;
-  filter:blur(14px);
+    radial-gradient(circle at 50% 52%,
+      rgba(160,255,220,.42) 0%,
+      rgba(120,255,200,.18) 28%,
+      transparent 58%
+    );
+
+  opacity:.70;
+  filter:blur(22px);
   pointer-events:none;
-  animation:haunt 6.8s ease-in-out infinite;
+  mix-blend-mode:screen;
+
+  animation:haunt 9.5s ease-in-out infinite;
 }
 }
 
@@ -201,36 +221,41 @@ a.dotty::before{
 a.dotty::after{
   content:"";
   position:absolute;
-  inset:-14%;
+  inset:-22%;
   border-radius:999px;
+
   background:
-    radial-gradient(circle at 50% 48%, rgba(255,255,255,.12), transparent 62%);
-  opacity:.6;
-  filter:blur(20px);
+    radial-gradient(circle at 44% 46%, rgba(255,255,255,.14) 0%, transparent 62%);
+
+  opacity:.58;
+  filter:blur(26px);
   pointer-events:none;
   mix-blend-mode:screen;
-  animation:haunt2 9.5s ease-in-out infinite;
+
+  animation:haunt2 13.5s ease-in-out infinite;
 }
 }
 
 @keyframes haunt{
-  0%,100%{transform:scale(1); opacity:.55}
-  50%{transform:scale(1.06); opacity:.95}
-}
-  50%{transform:scale(1.03); opacity:.78}
+  0%,100%{transform:translate(0,0) scale(1.00); opacity:.62}
+  50%{transform:translate(10px,-8px) scale(1.09); opacity:.96}
 }
 
 @keyframes haunt2{
-  0%,100%{transform:scale(1.04); opacity:.38}
-  50%{transform:scale(0.96); opacity:.75}
+  0%,100%{transform:translate(0,0) scale(1.02); opacity:.36}
+  50%{transform:translate(-12px,10px) scale(0.96); opacity:.80}
 }
-  50%{transform:scale(0.98); opacity:.58}
-}
+
 
 /* click state: glow + shake */
 a.dotty.active{
+  --gA: rgba(255, 214, 120, .70);
+  --gB: rgba(255, 176, 70, .55);
+  --gC: rgba(255, 120, 40, .32);
+
   animation:shake .42s ease-in-out infinite;
 }
+
 
 a.dotty.active img{
   filter:
