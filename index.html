@@ -4,19 +4,19 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Booha Invaders</title>
-<meta name="theme-color" content="#0b1a12" />
+<meta name="theme-color" content="#040a07" />
 <link rel="icon" type="image/png" sizes="32x32" href="dotty-logo.png">
 <link rel="apple-touch-icon" href="dotty-logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet" />
 
 <style>
 :root{
-  --bg0:#07140d;
-  --bg1:#0b2216;
+  /* darker, moodier forest */
+  --bg0:#020705;
+  --bg1:#040f0a;
   --ink:#eafff2;
 
   --glow:#6dffb3;
-  --glowSoft:rgba(109,255,179,.35);
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
@@ -31,65 +31,101 @@ body{
   -webkit-overflow-scrolling:touch;
   overscroll-behavior-y:contain;
 
+  /* darker + less "cheesy" */
   background:
-    radial-gradient(circle at 20% 25%, rgba(120,255,180,.18), transparent 60%),
-    radial-gradient(circle at 80% 20%, rgba(80,200,140,.14), transparent 62%),
-    radial-gradient(circle at 70% 80%, rgba(90,220,160,.12), transparent 68%),
-    radial-gradient(circle at 25% 75%, rgba(40,120,80,.18), transparent 66%),
+    radial-gradient(circle at 18% 22%, rgba(60,180,120,.14), transparent 62%),
+    radial-gradient(circle at 82% 20%, rgba(35,120,85,.12), transparent 66%),
+    radial-gradient(circle at 72% 82%, rgba(40,140,95,.10), transparent 70%),
+    radial-gradient(circle at 24% 78%, rgba(25,80,55,.16), transparent 70%),
     linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 100%);
 }
 
-/* slow forest glow */
+/* slow forest haze */
 body::before{
   content:"";
   position:fixed;
-  inset:-30%;
+  inset:-40%;
   pointer-events:none;
   z-index:-1;
   background:
     conic-gradient(from 180deg at 50% 50%,
-      rgba(120,255,180,.20),
-      rgba(60,180,120,.12),
-      rgba(40,140,90,.14),
-      rgba(120,255,180,.20)
+      rgba(90,255,170,.16),
+      rgba(35,130,90,.10),
+      rgba(18,70,48,.12),
+      rgba(90,255,170,.16)
     );
-  filter:blur(60px) saturate(1.1);
-  opacity:.25;
-  animation:forestDrift 28s ease-in-out infinite;
+  filter:blur(80px) saturate(1.08);
+  opacity:.18;
+  animation:forestDrift 32s ease-in-out infinite;
 }
 
 @keyframes forestDrift{
   0%{transform:translate(-2%,-1%) rotate(0deg)}
-  50%{transform:translate(2%,1%) rotate(14deg)}
+  50%{transform:translate(2%,1%) rotate(12deg)}
   100%{transform:translate(-2%,-1%) rotate(0deg)}
 }
 
+/* page layout: header at very top, footer at very bottom */
 .wrap{
   min-height:100vh;
   display:flex;
-  align-items:center;
   justify-content:center;
-  padding:24px 16px;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom));
 }
 
 .panel{
-  width:min(900px,100%);
+  width:min(980px,100%);
+  display:flex;
+  flex-direction:column;
+  min-height:100vh;
   text-align:center;
+}
+
+.header{
+  padding-top:10px;
+  padding-bottom:12px;
 }
 
 .title{
   font-size:clamp(34px,5vw,64px);
   font-weight:900;
   letter-spacing:.08em;
-  margin-bottom:6px;
-  text-shadow:0 0 24px rgba(109,255,179,.35);
+  line-height:1.05;
+  margin:0;
+
+  /* STRONGER RGB glow */
+  text-shadow:
+    0 0 22px rgba(255, 90, 90, .55),
+    0 0 36px rgba(90, 255, 170, .45),
+    0 0 56px rgba(90, 150, 255, .45),
+    0 0 90px rgba(90, 255, 170, .25);
+
+  filter:hue-rotate(0deg);
+  animation:rgbGlow 7.5s linear infinite;
+}
+}
+
+@keyframes rgbGlow{
+  0%{filter:hue-rotate(0deg)}
+  50%{filter:hue-rotate(180deg)}
+  100%{filter:hue-rotate(360deg)}
+}
+  100%{filter:hue-rotate(360deg)}
 }
 
 .subtitle{
   font-family:'Noto Sans JP',system-ui,sans-serif;
   font-weight:900;
-  opacity:.85;
-  margin-bottom:28px;
+  opacity:.88;
+  margin-top:6px;
+}
+
+.main{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px 0 18px;
 }
 
 .logo-wrap{
@@ -98,57 +134,91 @@ body::before{
   align-items:center;
 }
 
+/* Dotty: logo only (no tile) + haunting glow */
 a.dotty{
   position:relative;
-  width:min(280px,70vw);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+
+  width:min(340px,78vw);
   aspect-ratio:1/1;
-  border-radius:26px;
   cursor:pointer;
   text-decoration:none;
-  overflow:hidden;
 
-  background:
-    radial-gradient(circle at 30% 25%, rgba(109,255,179,.18), transparent 60%),
-    linear-gradient(145deg, rgba(12,40,26,.9), rgba(6,24,16,.95));
-
-  box-shadow:
-    0 0 0 2px rgba(255,255,255,.08) inset,
-    0 0 28px rgba(109,255,179,.25),
-    0 0 90px rgba(109,255,179,.15);
-
-  transition:filter .3s ease;
+  /* no tile / no box */
+  background:transparent;
+  border-radius:28px;
 }
 
 a.dotty img{
   width:100%;
   height:100%;
   object-fit:contain;
-  padding:22px;
-  transform:none; /* never moves */
+  padding:10px;
+
+  /* haunting glow (green-cyan) */
+  filter:
+    drop-shadow(0 0 10px rgba(120,255,190,.35))
+    drop-shadow(0 0 22px rgba(80,200,150,.28))
+    drop-shadow(0 0 44px rgba(60,170,120,.18));
 }
 
-/* glow pulse */
+/* outer aura behind logo */
+a.dotty::before{
+  content:"";
+  position:absolute;
+  inset:-22%;
+  border-radius:999px;
+  background:
+    radial-gradient(circle at 50% 52%, rgba(140,255,210,.38), transparent 60%);
+  opacity:.7;
+  filter:blur(14px);
+  pointer-events:none;
+  animation:haunt 6.8s ease-in-out infinite;
+}
+}
+
+/* subtle inner shimmer */
 a.dotty::after{
   content:"";
   position:absolute;
-  inset:-12%;
+  inset:-14%;
+  border-radius:999px;
   background:
-    radial-gradient(circle at 50% 50%, rgba(109,255,179,.25), transparent 65%);
-  opacity:.55;
-  filter:blur(2px);
+    radial-gradient(circle at 50% 48%, rgba(255,255,255,.12), transparent 62%);
+  opacity:.6;
+  filter:blur(20px);
   pointer-events:none;
-  animation:glowPulse 2.6s ease-in-out infinite;
+  mix-blend-mode:screen;
+  animation:haunt2 9.5s ease-in-out infinite;
+}
 }
 
-@keyframes glowPulse{
-  0%,100%{opacity:.45}
-  50%{opacity:.75}
+@keyframes haunt{
+  0%,100%{transform:scale(1); opacity:.55}
+  50%{transform:scale(1.06); opacity:.95}
+}
+  50%{transform:scale(1.03); opacity:.78}
 }
 
-/* click state: glow + shake only */
+@keyframes haunt2{
+  0%,100%{transform:scale(1.04); opacity:.38}
+  50%{transform:scale(0.96); opacity:.75}
+}
+  50%{transform:scale(0.98); opacity:.58}
+}
+
+/* click state: glow + shake */
 a.dotty.active{
-  filter:brightness(1.15) saturate(1.1);
-  animation:shake .4s ease-in-out infinite;
+  animation:shake .42s ease-in-out infinite;
+}
+
+a.dotty.active img{
+  filter:
+    drop-shadow(0 0 14px rgba(160,255,210,.45))
+    drop-shadow(0 0 34px rgba(80,200,150,.34))
+    drop-shadow(0 0 70px rgba(60,170,120,.22));
 }
 
 @keyframes shake{
@@ -160,58 +230,74 @@ a.dotty.active{
 }
 
 footer{
-  margin-top:34px;
+  margin-top:auto;
+  padding:18px 0 8px;
   font-family:'Noto Sans JP',system-ui,sans-serif;
-  font-weight:800;
-  font-size:13px;
-  opacity:.65;
+  font-weight:900;
+  font-size:clamp(15px, 2.2vw, 18px);
+  letter-spacing:.04em;
+  opacity:.78;
+
+  /* make it feel "locked in" at the bottom */
+  text-shadow:0 0 18px rgba(120,255,190,.14);
+}
+
+/* small screens: reduce header spacing so logo stays visible */
+@media (max-height: 740px){
+  .header{padding-top:6px; padding-bottom:8px;}
+  .main{padding:10px 0 10px;}
+  footer{padding:14px 0 6px;}
 }
 </style>
 </head>
 
 <body>
-<div class="wrap">
-  <div class="panel">
-    <div class="title">BOOHA INVADERS</div>
-    <div class="subtitle">ブーハー・インベーダーズ</div>
+  <div class="wrap">
+    <div class="panel">
+      <div class="header">
+        <div class="title">BOOHA INVADERS</div>
+        <div class="subtitle">ブーハー・インベーダーズ</div>
+      </div>
 
-    <div class="logo-wrap">
-      <a class="dotty" href="dotty.html" id="dottyBtn">
-        <img src="dotty-logo.png" alt="Dotty">
-      </a>
+      <div class="main">
+        <div class="logo-wrap">
+          <a class="dotty" href="dotty.html" id="dottyBtn" aria-label="Play Dotty">
+            <img src="dotty-logo.png" alt="Dotty" />
+          </a>
+        </div>
+      </div>
+
+      <footer>Bryan’s English School</footer>
     </div>
-
-    <footer>Bryan’s English School</footer>
   </div>
-</div>
 
-<audio id="enterSfx" src="invader-index.mp3" preload="auto" playsinline></audio>
+  <audio id="enterSfx" src="invader-index.mp3" preload="auto" playsinline></audio>
 
-<script>
-const btn = document.getElementById("dottyBtn");
-const sfx = document.getElementById("enterSfx");
-let locked = false;
+  <script>
+  const btn = document.getElementById("dottyBtn");
+  const sfx = document.getElementById("enterSfx");
+  let locked = false;
 
-function safePlay(a){
-  try{
-    a.pause();
-    if(a.readyState >= 1) a.currentTime = 0;
-    a.play().catch(()=>{});
-  }catch(_){}
-}
+  function safePlay(a){
+    try{
+      a.pause();
+      if(a.readyState >= 1) a.currentTime = 0;
+      a.play().catch(()=>{});
+    }catch(_){ }
+  }
 
-btn.addEventListener("click",(e)=>{
-  e.preventDefault();
-  if(locked) return;
-  locked = true;
+  btn.addEventListener("click", (e)=>{
+    e.preventDefault();
+    if(locked) return;
+    locked = true;
 
-  btn.classList.add("active");
-  safePlay(sfx);
+    btn.classList.add("active");
+    safePlay(sfx);
 
-  setTimeout(()=>{
-    window.location.href = btn.getAttribute("href");
-  }, 4000); // ⬅ exact 4 seconds
-});
-</script>
+    setTimeout(()=>{
+      window.location.href = btn.getAttribute("href");
+    }, 4000); // exact 4 seconds
+  });
+  </script>
 </body>
 </html>
