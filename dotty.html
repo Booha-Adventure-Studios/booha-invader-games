@@ -753,7 +753,16 @@ addEventListener("orientationchange", updateSafeArea);
 
  
 function updateOrientationGate(){
+  // ✅ DESKTOP: never show rotate overlay, never pause for orientation
+  if(!IS_COARSE){
+    if(rotateOverlay) rotateOverlay.style.display = "none";
+    _needRotateLast = false;
+    if(!started) GAME_SCALE = computeGameScale();
+    return;
+  }
+
   if(!started) GAME_SCALE = computeGameScale();
+
   const needRotate = !isLandscape();
 
   // ✅ prevent flicker: only act when state actually changes
@@ -774,6 +783,7 @@ function updateOrientationGate(){
     }
   }
 }
+
 
 
 function scheduleOrientationGate(){
