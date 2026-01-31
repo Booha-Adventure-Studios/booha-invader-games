@@ -20,17 +20,19 @@
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{
+html{
+  height:100%;
+}
+
+body{
+  min-height:100%;
   font-family:'Orbitron',system-ui,-apple-system,sans-serif;
   color:var(--ink);
 
-  overflow-x:hidden;
   overflow-y:auto;
+  overflow-x:hidden;
   -webkit-overflow-scrolling:touch;
-  overscroll-behavior-y:contain;
 
-  /* ensure darkness reaches absolute bottom */
-  min-height:100vh;
   background:
     radial-gradient(circle at 18% 22%, rgba(60,180,120,.14), transparent 62%),
     radial-gradient(circle at 82% 20%, rgba(35,120,85,.12), transparent 66%),
@@ -38,15 +40,20 @@ html,body{
     radial-gradient(circle at 24% 78%, rgba(25,80,55,.16), transparent 70%),
     linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 70%, #000 100%);
 }
+
 }
 
-/* slow forest haze */
+/* slow forest haze (mobile-safe) */
 body::before{
   content:"";
   position:fixed;
-  inset:-40%;
+  top:-40%;
+  left:-40%;
+  width:180%;
+  height:180%;
   pointer-events:none;
   z-index:-1;
+
   background:
     conic-gradient(from 180deg at 50% 50%,
       rgba(90,255,170,.16),
@@ -54,10 +61,16 @@ body::before{
       rgba(18,70,48,.12),
       rgba(90,255,170,.16)
     );
+
   filter:blur(80px) saturate(1.08);
   opacity:.18;
+
+  transform:translateZ(0);
+  will-change:transform, opacity;
+
   animation:forestDrift 32s ease-in-out infinite;
 }
+
 
 @keyframes forestDrift{
   0%{transform:translate(-2%,-1%) rotate(0deg)}
@@ -68,7 +81,6 @@ body::before{
 /* page layout: header at very top, footer a
   t very bottom */
 .wrap{
-  min-height:100vh;
   display:flex;
   justify-content:center;
   padding:18px 16px env(safe-area-inset-bottom);
@@ -78,9 +90,9 @@ body::before{
   width:min(980px,100%);
   display:flex;
   flex-direction:column;
-  min-height:100vh;
   text-align:center;
 }
+
 
 .header{
   padding-top:10px;
