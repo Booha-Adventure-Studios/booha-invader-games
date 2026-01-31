@@ -15,24 +15,27 @@
   --bg0:#020705;
   --bg1:#040f0a;
   --ink:#eafff2;
-
   --glow:#6dffb3;
+
+  /* default glow vars so filters never go “invalid” */
+  --gA: rgba(160,255,220,.42);
+  --gB: rgba(120,255,200,.18);
+  --gC: rgba(60,170,120,.22);
 }
 
 *{box-sizing:border-box;margin:0;padding:0}
-html{
-  height:100%;
-}
 
-body{
-  min-height:100%;
+html,body{
   font-family:'Orbitron',system-ui,-apple-system,sans-serif;
   color:var(--ink);
 
-  overflow-y:auto;
   overflow-x:hidden;
+  overflow-y:auto;
   -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
 
+  /* ensure darkness reaches absolute bottom */
+  min-height:100vh;
   background:
     radial-gradient(circle at 18% 22%, rgba(60,180,120,.14), transparent 62%),
     radial-gradient(circle at 82% 20%, rgba(35,120,85,.12), transparent 66%),
@@ -41,19 +44,13 @@ body{
     linear-gradient(180deg, var(--bg1) 0%, var(--bg0) 70%, #000 100%);
 }
 
-}
-
-/* slow forest haze (mobile-safe) */
+/* slow forest haze (original vibe) */
 body::before{
   content:"";
   position:fixed;
-  top:-40%;
-  left:-40%;
-  width:180%;
-  height:180%;
+  inset:-40%;
   pointer-events:none;
   z-index:-1;
-
   background:
     conic-gradient(from 180deg at 50% 50%,
       rgba(90,255,170,.16),
@@ -61,16 +58,10 @@ body::before{
       rgba(18,70,48,.12),
       rgba(90,255,170,.16)
     );
-
   filter:blur(80px) saturate(1.08);
   opacity:.18;
-
-  transform:translateZ(0);
-  will-change:transform, opacity;
-
   animation:forestDrift 32s ease-in-out infinite;
 }
-
 
 @keyframes forestDrift{
   0%{transform:translate(-2%,-1%) rotate(0deg)}
@@ -78,9 +69,9 @@ body::before{
   100%{transform:translate(-2%,-1%) rotate(0deg)}
 }
 
-/* page layout: header at very top, footer a
-  t very bottom */
+/* page layout: header at very top, footer at very bottom (desktop original) */
 .wrap{
+  min-height:100vh;
   display:flex;
   justify-content:center;
   padding:18px 16px env(safe-area-inset-bottom);
@@ -90,9 +81,9 @@ body::before{
   width:min(980px,100%);
   display:flex;
   flex-direction:column;
+  min-height:100vh;
   text-align:center;
 }
-
 
 .header{
   padding-top:10px;
@@ -148,8 +139,6 @@ body::before{
   margin-top:6px;
 }
 
-
-  
 .main{
   flex:1;
   display:flex;
@@ -178,7 +167,9 @@ a.dotty{
 
   /* no tile / no box */
   background:transparent;
-  border-radius:28px;
+  border-radius:999px; /* ✅ round so click never feels square */
+  -webkit-tap-highlight-color: transparent;
+  user-select:none;
 }
 
 a.dotty img{
@@ -187,7 +178,6 @@ a.dotty img{
   object-fit:contain;
   padding:10px;
 
-  /* FORCE true PNG transparency (kills white matte) */
   background:transparent;
   mix-blend-mode:normal;
 
@@ -196,16 +186,16 @@ a.dotty img{
     drop-shadow(0 0 14px var(--gA))
     drop-shadow(0 0 34px var(--gB))
     drop-shadow(0 0 78px var(--gC));
-}
 
-a.dotty img{ animation:logoDrift 6.8s ease-in-out infinite; }
+  animation:logoDrift 6.8s ease-in-out infinite;
+  will-change:transform, opacity, filter;
+}
 
 @keyframes logoDrift{
   0%,100%{transform:translate(0,0) scale(1)}
   50%{transform:translate(0,-4px) scale(1.01)}
 }
 
-  
 /* outer aura behind logo */
 a.dotty::before{
   content:"";
@@ -226,7 +216,7 @@ a.dotty::before{
   mix-blend-mode:screen;
 
   animation:haunt 9.5s ease-in-out infinite;
-}
+  will-change:transform, opacity;
 }
 
 /* subtle inner shimmer */
@@ -245,7 +235,7 @@ a.dotty::after{
   mix-blend-mode:screen;
 
   animation:haunt2 13.5s ease-in-out infinite;
-}
+  will-change:transform, opacity;
 }
 
 @keyframes haunt{
@@ -258,35 +248,44 @@ a.dotty::after{
   50%{transform:translate(-12px,10px) scale(0.96); opacity:.80}
 }
 
-
-/* click state: glow + shake */
+/* ✅ click state: taper/fade (NO square shake) */
 a.dotty.active{
   --gA: rgba(255, 214, 120, .70);
   --gB: rgba(255, 176, 70, .55);
   --gC: rgba(255, 120, 40, .32);
 
-  animation:shake .42s ease-in-out infinite;
+  animation: tapFade 900ms ease-out forwards;
 }
 
+a.dotty.active::before,
+a.dotty.active::after{
+  animation: tapAura 900ms ease-out forwards;
+}
 
 a.dotty.active img{
-  filter:
-    drop-shadow(0 0 14px rgba(160,255,210,.45))
-    drop-shadow(0 0 34px rgba(80,200,150,.34))
-    drop-shadow(0 0 70px rgba(60,170,120,.22));
+  animation: tapLogo 900ms ease-out forwards;
 }
 
-@keyframes shake{
-  0%{transform:translate(0,0)}
-  25%{transform:translate(-2px,1px)}
-  50%{transform:translate(2px,-1px)}
-  75%{transform:translate(-1px,2px)}
-  100%{transform:translate(0,0)}
+@keyframes tapFade{
+  0%   { transform:scale(1);    opacity:1; }
+  55%  { transform:scale(1.03); opacity:.92; }
+  100% { transform:scale(.985); opacity:0; }
+}
+
+@keyframes tapAura{
+  0%   { opacity:.70; transform:scale(1); }
+  100% { opacity:0;   transform:scale(.88); }
+}
+
+@keyframes tapLogo{
+  0%   { transform:translateY(0)   scale(1);    opacity:1; }
+  55%  { transform:translateY(-2px) scale(1.015); opacity:.92; }
+  100% { transform:translateY(6px) scale(.98);  opacity:0; }
 }
 
 footer{
   margin-top:auto;
-  margin-bottom:16px; /* move up a little */
+  margin-bottom:16px;
   padding:14px 0 6px;
 
   font-family:'Noto Sans JP',system-ui,sans-serif;
@@ -304,8 +303,14 @@ footer{
   .main{padding:10px 0 10px;}
   footer{padding:12px 0 6px; margin-bottom:12px;}
 }
-  .main{padding:10px 0 10px;}
-  footer{padding:14px 0 6px;}
+
+/* ✅ MOBILE ONLY: allow vertical scroll (desktop stays original) */
+@media (max-width: 768px){
+  html,body{ overscroll-behavior-y:auto; } /* let iOS scroll naturally */
+  .wrap{ min-height:auto; }
+  .panel{ min-height:auto; }
+  .main{ padding:18px 0 24px; }
+  footer{ margin-top:24px; }
 }
 </style>
 </head>
@@ -342,7 +347,7 @@ footer{
       a.pause();
       if(a.readyState >= 1) a.currentTime = 0;
       a.play().catch(()=>{});
-    }catch(_){ }
+    }catch(_){}
   }
 
   btn.addEventListener("click", (e)=>{
